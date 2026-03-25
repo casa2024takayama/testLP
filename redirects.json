@@ -2,7 +2,7 @@
   "redirects": [
     {
       "slug": "x_sns",
-      "path": "x_sns",
+      "path": "dev/x_sns",
       "destination": "https://www.saison-technology.com/",
       "tag": "x-campaign",
       "label": "ニコ超2026 QR Xプロフィール用",
@@ -15,31 +15,24 @@
     },
     {
       "slug": "test-01",
+      "path": "dev/test-01",
       "destination": "https://www.saison-technology.com/",
       "tag": "test",
       "label": "公式サイトTOPへのテストリンク"
     },
     {
       "slug": "test-02",
+      "path": "dev/test-02",
       "destination": "https://www.saison-technology.com/company/",
       "tag": "test",
       "label": "会社概要ページへのテストリンク"
     },
     {
       "slug": "x-campaign-01",
+      "path": "dev/x-campaign-01",
       "destination": "https://www.saison-technology.com/",
       "tag": "x-campaign",
       "label": "X施策テスト用"
-    },
-    {
-  "slug": "x_sns",
-  "path": "dev/x_sns",
-  "destination": "https://x.com/saison_sns",
-  "tag": "test",
-  "label": "ニコ超QRコード発行の技術デモ",
-  "utm": {
-    "source": "flyer",
-    "medium": "other",
-    "campaign": "FY25_cc_20260325_test"
-  }
+    }
+  ]
 }

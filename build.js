@@ -123,7 +123,7 @@ function generateHTML(entry) {
 
 function generateIndex() {
   const rows = data.redirects.map((e) => {
-    const p = e.path || `r/${e.slug}`;
+    const p = e.path || `dev/${e.slug}`;
     const dest = buildDestination(e);
     return `<tr>
       <td><a href="${config.base_url}/${p}/">${p}</a></td>
@@ -148,12 +148,18 @@ function generateIndex() {
     tr:hover { background:#f4f7fa; }
     a { color:#028090; }
     .info { background:#f4f7fa; padding:12px 16px; border-radius:6px; margin-top:16px; font-size:14px; color:#666; }
+    .tool-link { margin-top:16px; }
+    .tool-link a { background:#028090; color:white; padding:8px 16px; border-radius:6px; text-decoration:none; font-size:14px; }
+    .tool-link a:hover { background:#065A82; }
   </style>
 </head>
 <body>
   <h1>Link Tracker - 管理用一覧</h1>
   <div class="info">
     登録リンク数: ${data.redirects.length}件 ｜ GTM: <code>${config.gtm_container_id}</code> ｜ GA4: <code>${config.ga4_measurement_id}</code>
+  </div>
+  <div class="tool-link">
+    <a href="${config.base_url}/utm-generator.html">📝 UTM Link Generator を開く</a>
   </div>
   <table>
     <thead><tr><th>パス</th><th>タグ</th><th>ラベル</th><th>転送先（UTM付き）</th></tr></thead>
@@ -165,7 +171,7 @@ function generateIndex() {
 
 let count = 0;
 for (const entry of data.redirects) {
-  const pagePath = entry.path || path.join("r", entry.slug);
+  const pagePath = entry.path || `dev/${entry.slug}`;
   const dir = path.join(outputDir, pagePath);
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, "index.html"), generateHTML(entry));

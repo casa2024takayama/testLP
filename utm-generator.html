@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>UTM Link Generator — セゾンテクノロジー</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy: #0F2B46;
+  --deep-blue: #065A82;
+  --teal: #028090;
+  --seafoam: #00A896;
+  --mint: #02C39A;
+  --white: #FFFFFF;
+  --off-white: #F4F7FA;
+  --light-gray: #E8EEF2;
+  --mid-gray: #7A8A99;
+  --dark-text: #1A2332;
+  --accent: #F59E0B;
+  --red: #EF4444;
+  --font-body: 'Noto Sans JP', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--off-white);
+  color: var(--dark-text);
+  min-height: 100vh;
+}
+
+.header {
+  background: var(--navy);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+}
+.header h1 { color: var(--white); font-size: 18px; font-weight: 700; letter-spacing: 0.02em; }
+.header .badge { background: var(--teal); color: var(--white); font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 500; }
+
+.tabs { display: flex; background: var(--white); border-bottom: 2px solid var(--light-gray); padding: 0 24px; }
+.tab { padding: 14px 24px; font-size: 14px; font-weight: 500; color: var(--mid-gray); cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s; user-select: none; }
+.tab:hover { color: var(--teal); }
+.tab.active { color: var(--teal); border-bottom-color: var(--teal); }
+
+.main { max-width: 1100px; margin: 0 auto; padding: 24px; }
+.panel { display: none; }
+.panel.active { display: block; }
+
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 768px) { .form-grid { grid-template-columns: 1fr; } }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group.full { grid-column: 1 / -1; }
+.form-group label { font-size: 13px; font-weight: 500; color: var(--deep-blue); display: flex; align-items: center; gap: 6px; }
+.form-group label .required { color: var(--red); font-size: 11px; }
+.form-group label .hint { color: var(--mid-gray); font-weight: 400; font-size: 11px; }
+.form-group input, .form-group select {
+  padding: 10px 14px; border: 1.5px solid var(--light-gray); border-radius: 8px;
+  font-size: 14px; font-family: var(--font-body); transition: border-color 0.2s, box-shadow 0.2s; background: var(--white);
+}
+.form-group input:focus, .form-group select:focus { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px rgba(2,128,144,0.12); }
+.form-group input::placeholder { color: #bbb; }
+
+.card { background: var(--white); border-radius: 12px; padding: 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); margin-bottom: 20px; }
+.card-title {
+  font-size: 15px; font-weight: 700; color: var(--navy); margin-bottom: 16px;
+  padding-bottom: 10px; border-bottom: 1px solid var(--light-gray); display: flex; align-items: center; gap: 8px;
+}
+.card-title .icon {
+  width: 20px; height: 20px; background: var(--teal); border-radius: 5px;
+  display: flex; align-items: center; justify-content: center; color: white; font-size: 11px; font-weight: 700;
+}
+
+/* URL Preview */
+.url-preview {
+  background: var(--navy);
+  border-radius: 8px;
+  padding: 14px 18px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  margin-top: 12px;
+  word-break: break-all;
+  transition: all 0.3s;
+}
+.url-preview .prefix { color: var(--mid-gray); }
+.url-preview .editable { color: var(--seafoam); font-weight: 500; }
+.url-preview .placeholder-text { color: #4a5568; font-style: italic; }
+.url-preview-label {
+  font-size: 11px;
+  color: var(--mid-gray);
+  margin-top: 12px;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.url-preview-label .live-dot {
+  width: 6px; height: 6px; background: var(--seafoam); border-radius: 50%;
+  animation: pulse 1.5s infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+/* Slug input combo */
+.slug-input-wrapper {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid var(--light-gray);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.slug-input-wrapper:focus-within {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(2,128,144,0.12);
+}
+.slug-prefix {
+  background: var(--light-gray);
+  padding: 10px 12px;
+  font-size: 13px;
+  font-family: var(--font-mono);
+  color: var(--mid-gray);
+  white-space: nowrap;
+  border-right: 1px solid var(--light-gray);
+}
+.slug-input-wrapper input {
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  flex: 1;
+  font-family: var(--font-mono);
+}
+.slug-input-wrapper input:focus { box-shadow: none !important; }
+
+.btn-row { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+.btn {
+  padding: 10px 24px; border: none; border-radius: 8px; font-size: 14px; font-weight: 500;
+  font-family: var(--font-body); cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px;
+}
+.btn-primary { background: var(--teal); color: var(--white); }
+.btn-primary:hover { background: var(--deep-blue); }
+.btn-secondary { background: var(--light-gray); color: var(--dark-text); }
+.btn-secondary:hover { background: #d5dde3; }
+.btn-danger { background: transparent; color: var(--red); border: 1px solid var(--red); }
+.btn-danger:hover { background: #fef2f2; }
+.btn-small { padding: 6px 14px; font-size: 12px; }
+
+.result-area { display: none; margin-top: 24px; }
+.result-area.show { display: block; }
+
+.result-url {
+  background: var(--navy); color: var(--seafoam); padding: 14px 18px; border-radius: 8px;
+  font-family: var(--font-mono); font-size: 13px; word-break: break-all; line-height: 1.6; position: relative;
+}
+.result-url .copy-btn {
+  position: absolute; top: 8px; right: 8px; background: var(--teal); color: white;
+  border: none; padding: 5px 12px; border-radius: 5px; font-size: 11px; cursor: pointer; font-family: var(--font-body);
+}
+.result-url .copy-btn:hover { background: var(--seafoam); }
+
+.result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 16px; }
+@media (max-width: 768px) { .result-grid { grid-template-columns: 1fr; } }
+
+.qr-container { text-align: center; padding: 20px; background: var(--white); border: 1px solid var(--light-gray); border-radius: 8px; }
+.qr-container canvas { max-width: 200px; }
+.qr-container .qr-download { margin-top: 12px; }
+
+.json-output {
+  background: #1e293b; color: #94a3b8; padding: 16px; border-radius: 8px;
+  font-family: var(--font-mono); font-size: 12px; line-height: 1.6;
+  white-space: pre-wrap; word-break: break-all; max-height: 300px; overflow-y: auto; position: relative;
+}
+.json-output .copy-btn {
+  position: absolute; top: 8px; right: 8px; background: #334155; color: #94a3b8;
+  border: none; padding: 5px 12px; border-radius: 5px; font-size: 11px; cursor: pointer; font-family: var(--font-body);
+}
+.json-output .copy-btn:hover { background: #475569; color: white; }
+
+.history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.history-table th {
+  background: var(--deep-blue); color: white; padding: 10px 12px; text-align: left; font-weight: 500; position: sticky; top: 0;
+}
+.history-table td { padding: 10px 12px; border-bottom: 1px solid var(--light-gray); vertical-align: top; }
+.history-table tr:hover { background: #f0f5f8; }
+.history-table .url-cell { font-family: var(--font-mono); font-size: 11px; word-break: break-all; max-width: 300px; color: var(--teal); }
+.history-table .date-cell { white-space: nowrap; color: var(--mid-gray); font-size: 12px; }
+.history-table .tag-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+
+.empty-state { text-align: center; padding: 60px 20px; color: var(--mid-gray); }
+.empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
+
+.toast {
+  position: fixed; bottom: 24px; right: 24px; background: var(--navy); color: var(--white);
+  padding: 12px 20px; border-radius: 8px; font-size: 13px; box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  transform: translateY(100px); opacity: 0; transition: all 0.3s; z-index: 1000;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+
+.naming-hint {
+  background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px;
+  padding: 12px 16px; font-size: 12px; color: #92400e; line-height: 1.7; margin-top: 8px;
+}
+.naming-hint code { background: #fef3c7; padding: 1px 5px; border-radius: 3px; font-family: var(--font-mono); font-size: 11px; }
+
+.table-wrapper { overflow-x: auto; border-radius: 8px; border: 1px solid var(--light-gray); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>UTM Link Generator</h1>
+  <span class="badge">セゾンテクノロジー</span>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('generate')">URL発行</div>
+  <div class="tab" onclick="switchTab('history')">発行履歴</div>
+</div>
+
+<div class="main">
+
+  <!-- Generate Panel -->
+  <div id="panel-generate" class="panel active">
+
+    <div class="card">
+      <div class="card-title"><div class="icon">1</div> リダイレクトページの設定</div>
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>転送先URL <span class="required">必須</span> <span class="hint">（ユーザーが最終的にたどり着くページ）</span></label>
+          <input type="url" id="destination" placeholder="https://www.saison-technology.com/" value="https://www.saison-technology.com/" oninput="updatePreview()">
+        </div>
+        <div class="form-group full">
+          <label>ページ識別名 <span class="required">必須</span> <span class="hint">（英数字・ハイフン・アンダースコア。用途がわかる名前をつけてください）</span></label>
+          <div class="slug-input-wrapper">
+            <span class="slug-prefix">/dev/</span>
+            <input type="text" id="slug" placeholder="例: x_sns, nikochou_qr, summer_lp" oninput="updatePreview()">
+          </div>
+        </div>
+        <div class="form-group full">
+          <div class="url-preview-label"><span class="live-dot"></span> 生成されるリダイレクトURL（リアルタイムプレビュー）</div>
+          <div class="url-preview" id="url-preview">
+            <span class="prefix">https://casa2024takayama.github.io/testLP/dev/</span><span class="placeholder-text" id="preview-slug">ここにページ識別名が入ります</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><div class="icon">2</div> UTM パラメータ</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>utm_source <span class="required">必須</span> <span class="hint">（流入元サイト）</span></label>
+          <select id="utm_source" onchange="handleSourceChange(); updatePreview();">
+            <option value="">選択してください</option>
+            <option value="x">x（X / Twitter）</option>
+            <option value="facebook">facebook</option>
+            <option value="linkedin">linkedin</option>
+            <option value="google">google</option>
+            <option value="yahoo">yahoo</option>
+            <option value="bing">bing</option>
+            <option value="jbpress">jbpress</option>
+            <option value="newspicks">newspicks</option>
+            <option value="businessinsider">businessinsider</option>
+            <option value="nikkeibp">nikkeibp</option>
+            <option value="ascii">ascii</option>
+            <option value="itmedia">itmedia</option>
+            <option value="jdmc">jdmc</option>
+            <option value="bit">bit（ビジネス+IT）</option>
+            <option value="peatix">peatix</option>
+            <option value="doorkeeper">doorkeeper</option>
+            <option value="connpass">connpass</option>
+            <option value="kokucheese">kokucheese</option>
+            <option value="techplay">techplay</option>
+            <option value="employee">employee（社内）</option>
+            <option value="flyer">flyer（チラシ・QR）</option>
+            <option value="__custom__">その他（手入力）</option>
+          </select>
+          <input type="text" id="utm_source_custom" placeholder="カスタムソースを入力" style="display:none; margin-top:6px;" oninput="updatePreview()">
+        </div>
+        <div class="form-group">
+          <label>utm_medium <span class="required">必須</span> <span class="hint">（流入カテゴリ）</span></label>
+          <select id="utm_medium" onchange="updatePreview()">
+            <option value="">選択してください</option>
+            <option value="social">social（SNS）</option>
+            <option value="cpc">cpc（リスティング広告）</option>
+            <option value="display">display（ディスプレイ広告）</option>
+            <option value="email">email（メール）</option>
+            <option value="referral">referral（外部サイトリンク）</option>
+            <option value="other">other（その他）</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label>utm_campaign <span class="required">必須</span> <span class="hint">（施策名）</span></label>
+          <input type="text" id="utm_campaign" placeholder="例: FY25_cc_202604_nikochou" oninput="updatePreview()">
+          <div class="naming-hint">
+            命名規則: <code>{年度}_{部署}_{日付}_{施策名}</code><br>
+            例: <code>FY25_cc_202604_nikochou</code>、<code>FY25_mkt_202610_days26</code>、<code>ongoing_mkt_wp_sap</code>
+          </div>
+        </div>
+        <div class="form-group full">
+          <label>utm_content <span class="hint">（任意：訴求詳細・リンク箇所）</span></label>
+          <input type="text" id="utm_content" placeholder="例: qr_x_profile, banner_a, text_link" oninput="updatePreview()">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><div class="icon">3</div> 管理情報</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>管理タグ <span class="hint">（GA4 のフィルタ用）</span></label>
+          <input type="text" id="tag" placeholder="例: x-campaign, event, test" value="x-campaign">
+        </div>
+        <div class="form-group">
+          <label>ラベル（メモ） <span class="hint">（日本語OK・管理用）</span></label>
+          <input type="text" id="label" placeholder="例: ニコ超2026 QRコード用">
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="generateURL()">▶ URL を生成</button>
+      <button class="btn btn-secondary" onclick="resetForm()">リセット</button>
+    </div>
+
+    <!-- Result -->
+    <div id="result-area" class="result-area">
+      <div class="card">
+        <div class="card-title"><div class="icon" style="background: var(--seafoam);">✓</div> 生成結果</div>
+
+        <div style="margin-bottom: 12px;">
+          <label style="font-size:12px; color:var(--mid-gray); margin-bottom:4px; display:block;">リダイレクトURL（このURLを配布・QRにします）</label>
+          <div class="result-url" id="result-redirect-url">
+            <span id="redirect-url-text"></span>
+            <button class="copy-btn" onclick="copyText('redirect-url-text')">コピー</button>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 12px;">
+          <label style="font-size:12px; color:var(--mid-gray); margin-bottom:4px; display:block;">転送先URL（UTMパラメータ付き — ユーザーが最終的にたどり着くURL）</label>
+          <div class="result-url" style="color: #cbd5e1;">
+            <span id="dest-url-text"></span>
+            <button class="copy-btn" onclick="copyText('dest-url-text')">コピー</button>
+          </div>
+        </div>
+
+        <div class="result-grid">
+          <div>
+            <label style="font-size:12px; color:var(--mid-gray); margin-bottom:8px; display:block;">QRコード</label>
+            <div class="qr-container">
+              <div id="qr-code"></div>
+              <div class="qr-download">
+                <button class="btn btn-secondary btn-small" onclick="downloadQR()">PNG ダウンロード</button>
+              </div>
+            </div>
+          </div>
+          <div>
+            <label style="font-size:12px; color:var(--mid-gray); margin-bottom:8px; display:block;">redirects.json エントリ（テスト用）</label>
+            <div class="json-output" id="json-output">
+              <button class="copy-btn" onclick="copyJSON()">コピー</button>
+            </div>
+            <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:8px; padding:14px 16px; margin-top:10px; font-size:12px; color:#166534; line-height:1.8;">
+              <strong style="font-size:13px;">📝 テスト用リダイレクトページの追加手順</strong><br>
+              ① 上の JSON を「コピー」ボタンでコピー<br>
+              ② GitHub の <code style="background:#dcfce7; padding:1px 5px; border-radius:3px; font-family:var(--font-mono); font-size:11px;">redirects.json</code> を開き、鉛筆アイコン（Edit）をクリック<br>
+              ③ 最後のエントリの <code style="background:#dcfce7; padding:1px 5px; border-radius:3px; font-family:var(--font-mono); font-size:11px;">}</code> の後ろに <code style="background:#dcfce7; padding:1px 5px; border-radius:3px; font-family:var(--font-mono); font-size:11px;">,</code>（カンマ）を追加し、コピーした JSON を貼り付け<br>
+              ④ 「Commit changes」で保存 → Actions が自動で走り、1〜2分後にリダイレクトページが生成されます
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- History Panel -->
+  <div id="panel-history" class="panel">
+    <div class="card">
+      <div class="card-title" style="justify-content: space-between;">
+        <span style="display:flex;align-items:center;gap:8px;"><div class="icon">📋</div> 発行履歴</span>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-secondary btn-small" onclick="exportCSV()">CSV エクスポート</button>
+          <button class="btn btn-danger btn-small" onclick="clearHistory()">全削除</button>
+        </div>
+      </div>
+      <div id="history-content"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<script>
+const BASE_URL = 'https://casa2024takayama.github.io/testLP';
+const PATH_PREFIX = 'dev';
+
+// Tab switching
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelector(`#panel-${tab}`).classList.add('active');
+  event.target.classList.add('active');
+  if (tab === 'history') renderHistory();
+}
+
+// Source custom input toggle
+function handleSourceChange() {
+  const sel = document.getElementById('utm_source');
+  const custom = document.getElementById('utm_source_custom');
+  custom.style.display = sel.value === '__custom__' ? 'block' : 'none';
+  if (sel.value !== '__custom__') custom.value = '';
+}
+
+function getSourceValue() {
+  const sel = document.getElementById('utm_source').value;
+  if (sel === '__custom__') return document.getElementById('utm_source_custom').value.trim();
+  return sel;
+}
+
+// Real-time URL preview
+function updatePreview() {
+  const slug = document.getElementById('slug').value.trim();
+  const previewEl = document.getElementById('preview-slug');
+
+  if (slug) {
+    previewEl.textContent = slug;
+    previewEl.className = 'editable';
+  } else {
+    previewEl.textContent = 'ここにページ識別名が入ります';
+    previewEl.className = 'placeholder-text';
+  }
+}
+
+// Toast
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function copyText(id) {
+  const text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).then(() => showToast('コピーしました'));
+}
+
+let _lastJsonEntry = '';
+
+function copyJSON() {
+  navigator.clipboard.writeText(_lastJsonEntry).then(() => showToast('JSON をコピーしました'));
+}
+
+// Generate URL
+function generateURL() {
+  const destination = document.getElementById('destination').value.trim();
+  const slug = document.getElementById('slug').value.trim();
+  const source = getSourceValue();
+  const medium = document.getElementById('utm_medium').value;
+  const campaign = document.getElementById('utm_campaign').value.trim();
+  const content = document.getElementById('utm_content').value.trim();
+  const tag = document.getElementById('tag').value.trim() || 'general';
+  const label = document.getElementById('label').value.trim() || '';
+
+  if (!destination) return showToast('⚠️ 転送先URLを入力してください');
+  if (!slug) return showToast('⚠️ ページ識別名を入力してください');
+  if (!/^[a-zA-Z0-9_-]+$/.test(slug)) return showToast('⚠️ ページ識別名は英数字・ハイフン・アンダースコアのみ');
+  if (!source) return showToast('⚠️ utm_source を選択してください');
+  if (!medium) return showToast('⚠️ utm_medium を選択してください');
+  if (!campaign) return showToast('⚠️ utm_campaign を入力してください');
+
+  const params = new URLSearchParams();
+  params.set('utm_source', source);
+  params.set('utm_medium', medium);
+  params.set('utm_campaign', campaign);
+  if (content) params.set('utm_content', content);
+
+  const destWithUTM = destination + (destination.includes('?') ? '&' : '?') + params.toString();
+  const fullPath = `${PATH_PREFIX}/${slug}`;
+  const redirectURL = `${BASE_URL}/${fullPath}`;
+
+  document.getElementById('redirect-url-text').textContent = redirectURL;
+  document.getElementById('dest-url-text').textContent = destWithUTM;
+
+  // QR Code
+  const qrDiv = document.getElementById('qr-code');
+  qrDiv.innerHTML = '';
+  new QRCode(qrDiv, {
+    text: redirectURL,
+    width: 200, height: 200,
+    colorDark: '#0F2B46', colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.H
+  });
+
+  // JSON entry
+  const entry = {
+    slug: slug,
+    path: fullPath,
+    destination: destination,
+    tag: tag,
+    label: label || `${campaign} 用リンク`,
+    utm: { source, medium, campaign }
+  };
+  if (content) entry.utm.content = content;
+
+  _lastJsonEntry = JSON.stringify(entry, null, 2);
+  document.getElementById('json-output').innerHTML =
+    `<button class="copy-btn" onclick="copyJSON()">コピー</button>` +
+    _lastJsonEntry;
+
+  document.getElementById('result-area').classList.add('show');
+
+  saveToHistory({
+    slug, fullPath, redirectURL, destWithUTM,
+    source, medium, campaign, content, tag,
+    label: label || `${campaign} 用リンク`,
+    createdAt: new Date().toISOString()
+  });
+
+  showToast('✅ URL を生成しました');
+  setTimeout(() => {
+    document.getElementById('result-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
+}
+
+// QR Download
+function downloadQR() {
+  const canvas = document.querySelector('#qr-code canvas');
+  if (!canvas) return showToast('⚠️ QR コードがありません');
+  const slug = document.getElementById('slug').value.trim() || 'qr';
+  const link = document.createElement('a');
+  link.download = `qr_${slug}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+  showToast('QR コードをダウンロードしました');
+}
+
+// History
+function getHistory() {
+  try { return JSON.parse(localStorage.getItem('utm_history') || '[]'); }
+  catch { return []; }
+}
+
+function saveToHistory(entry) {
+  const history = getHistory();
+  const existing = history.findIndex(h => h.slug === entry.slug);
+  if (existing >= 0) history.splice(existing, 1);
+  history.unshift(entry);
+  if (history.length > 200) history.length = 200;
+  localStorage.setItem('utm_history', JSON.stringify(history));
+}
+
+function renderHistory() {
+  const history = getHistory();
+  const container = document.getElementById('history-content');
+
+  if (history.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">📭</div>
+        <p>まだ発行履歴がありません</p>
+        <p style="font-size:12px; margin-top:8px;">「URL発行」タブで URL を生成すると、ここに記録されます</p>
+      </div>`;
+    return;
+  }
+
+  const mediumColors = {
+    social: '#028090', cpc: '#dc2626', display: '#7c3aed',
+    email: '#2563eb', referral: '#059669', other: '#6b7280'
+  };
+
+  const rows = history.map((h, i) => {
+    const date = new Date(h.createdAt);
+    const dateStr = `${date.getFullYear()}/${String(date.getMonth()+1).padStart(2,'0')}/${String(date.getDate()).padStart(2,'0')} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
+    const mColor = mediumColors[h.medium] || '#6b7280';
+    return `<tr>
+      <td class="date-cell">${dateStr}</td>
+      <td><strong>${h.slug}</strong><br><span style="font-size:11px;color:var(--mid-gray)">${h.label}</span></td>
+      <td>${h.source}</td>
+      <td><span class="tag-badge" style="background:${mColor}15;color:${mColor}">${h.medium}</span></td>
+      <td style="font-size:12px">${h.campaign}</td>
+      <td style="font-size:12px;color:var(--mid-gray)">${h.content || '-'}</td>
+      <td class="url-cell">${h.redirectURL}</td>
+      <td><button class="btn btn-secondary btn-small" onclick="copyHistoryURL(${i})">コピー</button></td>
+    </tr>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="table-wrapper">
+      <table class="history-table">
+        <thead>
+          <tr><th>日時</th><th>識別名 / ラベル</th><th>source</th><th>medium</th><th>campaign</th><th>content</th><th>リダイレクトURL</th><th></th></tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <p style="margin-top:12px; font-size:11px; color:var(--mid-gray);">
+      ${history.length}件の履歴（このブラウザの localStorage に保存されています）
+    </p>`;
+}
+
+function copyHistoryURL(index) {
+  const history = getHistory();
+  if (history[index]) {
+    navigator.clipboard.writeText(history[index].redirectURL).then(() => showToast('URL をコピーしました'));
+  }
+}
+
+function clearHistory() {
+  if (confirm('発行履歴をすべて削除しますか？')) {
+    localStorage.removeItem('utm_history');
+    renderHistory();
+    showToast('履歴を削除しました');
+  }
+}
+
+function exportCSV() {
+  const history = getHistory();
+  if (history.length === 0) return showToast('エクスポートする履歴がありません');
+
+  const headers = ['日時','識別名','ラベル','utm_source','utm_medium','utm_campaign','utm_content','タグ','リダイレクトURL','転送先URL'];
+  const rows = history.map(h => [
+    h.createdAt, h.slug, h.label, h.source, h.medium, h.campaign, h.content || '', h.tag, h.redirectURL, h.destWithUTM
+  ]);
+
+  const bom = '\uFEFF';
+  const csv = bom + [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `utm_history_${new Date().toISOString().slice(0,10)}.csv`;
+  link.click();
+  showToast('CSV をダウンロードしました');
+}
+
+function resetForm() {
+  document.getElementById('destination').value = 'https://www.saison-technology.com/';
+  document.getElementById('slug').value = '';
+  document.getElementById('utm_source').value = '';
+  document.getElementById('utm_source_custom').value = '';
+  document.getElementById('utm_source_custom').style.display = 'none';
+  document.getElementById('utm_medium').value = '';
+  document.getElementById('utm_campaign').value = '';
+  document.getElementById('utm_content').value = '';
+  document.getElementById('tag').value = 'x-campaign';
+  document.getElementById('label').value = '';
+  document.getElementById('result-area').classList.remove('show');
+  updatePreview();
+}
+</script>
+
+</body>
+</html>
