@@ -4,6 +4,7 @@ const path = require("path");
 const config = JSON.parse(fs.readFileSync("config.json", "utf-8"));
 const data = JSON.parse(fs.readFileSync("redirects.json", "utf-8"));
 const outputDir = "public";
+const PATH_PREFIX = "dev";
 
 if (!fs.existsSync(outputDir)) {
   fs.mkdirSync(outputDir, { recursive: true });
@@ -123,7 +124,7 @@ function generateHTML(entry) {
 
 function generateIndex() {
   const rows = data.redirects.map((e) => {
-    const p = e.path || `dev/${e.slug}`;
+    const p = `${PATH_PREFIX}/${e.slug}`;
     const dest = buildDestination(e);
     return `<tr>
       <td><a href="${config.base_url}/${p}/">${p}</a></td>
@@ -160,6 +161,7 @@ function generateIndex() {
   </div>
   <div class="tool-link">
     <a href="${config.base_url}/utm-generator.html">📝 UTM Link Generator を開く</a>
+    <a href="${config.base_url}/manual.html" style="margin-left:8px;">📖 操作マニュアル</a>
   </div>
   <table>
     <thead><tr><th>パス</th><th>タグ</th><th>ラベル</th><th>転送先（UTM付き）</th></tr></thead>
@@ -169,9 +171,10 @@ function generateIndex() {
 </html>`;
 }
 
+// Build redirect pages
 let count = 0;
 for (const entry of data.redirects) {
-  const pagePath = entry.path || `dev/${entry.slug}`;
+  const pagePath = `${PATH_PREFIX}/${entry.slug}`;
   const dir = path.join(outputDir, pagePath);
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, "index.html"), generateHTML(entry));
@@ -179,9 +182,12 @@ for (const entry of data.redirects) {
 }
 
 // Copy static files
-if (fs.existsSync("utm-generator.html")) {
-  fs.copyFileSync("utm-generator.html", path.join(outputDir, "utm-generator.html"));
-  console.log("✅ Copied utm-generator.html");
+const staticFiles = ["utm-generator.html", "manual.html"];
+for (const file of staticFiles) {
+  if (fs.existsSync(file)) {
+    fs.copyFileSync(file, path.join(outputDir, file));
+    console.log(`✅ Copied ${file}`);
+  }
 }
 
 fs.writeFileSync(path.join(outputDir, "index.html"), generateIndex());
