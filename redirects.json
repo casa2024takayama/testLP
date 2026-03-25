@@ -30,6 +30,17 @@
       "destination": "https://www.saison-technology.com/",
       "tag": "x-campaign",
       "label": "X施策テスト用"
-    }
+    },
+    {
+  "slug": "x_sns",
+  "path": "dev/x_sns",
+  "destination": "https://x.com/saison_sns",
+  "tag": "test",
+  "label": "ニコ超QRコード発行の技術デモ",
+  "utm": {
+    "source": "flyer",
+    "medium": "other",
+    "campaign": "FY25_cc_20260325_test"
+  }
   ]
 }
