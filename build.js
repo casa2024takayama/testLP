@@ -178,5 +178,11 @@ for (const entry of data.redirects) {
   count++;
 }
 
+// Copy static files
+if (fs.existsSync("utm-generator.html")) {
+  fs.copyFileSync("utm-generator.html", path.join(outputDir, "utm-generator.html"));
+  console.log("✅ Copied utm-generator.html");
+}
+
 fs.writeFileSync(path.join(outputDir, "index.html"), generateIndex());
 console.log(`✅ Built ${count} redirect pages + admin index → ${outputDir}/`);
