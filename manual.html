@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>操作マニュアル — UTM Link Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy: #0F2B46;
+  --deep-blue: #065A82;
+  --teal: #028090;
+  --seafoam: #00A896;
+  --mint: #02C39A;
+  --white: #FFFFFF;
+  --off-white: #F4F7FA;
+  --light-gray: #E8EEF2;
+  --mid-gray: #7A8A99;
+  --dark-text: #1A2332;
+  --accent: #F59E0B;
+  --font-body: 'Noto Sans JP', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--off-white);
+  color: var(--dark-text);
+  line-height: 1.8;
+  font-size: 14px;
+}
+
+/* Header */
+.header {
+  background: var(--navy);
+  padding: 40px 24px 32px;
+  text-align: center;
+}
+.header h1 {
+  color: var(--white);
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  margin-bottom: 8px;
+}
+.header p {
+  color: var(--seafoam);
+  font-size: 14px;
+}
+.header .badge {
+  display: inline-block;
+  background: var(--teal);
+  color: var(--white);
+  font-size: 11px;
+  padding: 3px 12px;
+  border-radius: 20px;
+  margin-top: 12px;
+}
+
+/* Nav */
+.nav {
+  background: var(--white);
+  border-bottom: 1px solid var(--light-gray);
+  padding: 12px 24px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.nav-inner {
+  max-width: 820px;
+  margin: 0 auto;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.nav a {
+  color: var(--mid-gray);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 12px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+.nav a:hover { color: var(--teal); background: var(--off-white); }
+
+/* Main */
+.main {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+}
+
+/* Section */
+.section {
+  margin-bottom: 48px;
+}
+.section-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--teal);
+  color: var(--white);
+  font-size: 15px;
+  font-weight: 700;
+  border-radius: 8px;
+  margin-right: 10px;
+  vertical-align: middle;
+}
+h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--light-gray);
+}
+h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--deep-blue);
+  margin: 24px 0 10px;
+}
+p { margin-bottom: 12px; }
+
+/* Steps */
+.steps {
+  counter-reset: step;
+  list-style: none;
+  padding: 0;
+}
+.steps li {
+  counter-increment: step;
+  position: relative;
+  padding: 16px 16px 16px 56px;
+  margin-bottom: 12px;
+  background: var(--white);
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  border-left: 3px solid var(--teal);
+}
+.steps li::before {
+  content: counter(step);
+  position: absolute;
+  left: 16px;
+  top: 16px;
+  width: 28px;
+  height: 28px;
+  background: var(--teal);
+  color: var(--white);
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.steps li strong { color: var(--navy); }
+
+/* Code */
+code {
+  background: #e2e8f0;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--deep-blue);
+}
+pre {
+  background: var(--navy);
+  color: #94a3b8;
+  padding: 16px 20px;
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.7;
+  overflow-x: auto;
+  margin: 12px 0;
+}
+pre .highlight { color: var(--seafoam); font-weight: 500; }
+pre .comment { color: #4a5568; }
+
+/* Cards */
+.card {
+  background: var(--white);
+  border-radius: 10px;
+  padding: 20px 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  margin-bottom: 16px;
+}
+.card-accent {
+  border-left: 4px solid var(--accent);
+}
+.card-info {
+  border-left: 4px solid var(--teal);
+}
+.card-warn {
+  border-left: 4px solid var(--accent);
+  background: #fffbeb;
+}
+.card-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 8px;
+}
+
+/* Table */
+.doc-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 13px;
+}
+.doc-table th {
+  background: var(--deep-blue);
+  color: white;
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 500;
+}
+.doc-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--light-gray);
+  vertical-align: top;
+}
+.doc-table tr:hover { background: #f0f5f8; }
+.doc-table code { font-size: 11px; }
+
+/* Diagram */
+.flow-diagram {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin: 20px 0;
+  overflow-x: auto;
+  padding: 8px 0;
+}
+.flow-step {
+  background: var(--white);
+  border: 2px solid var(--light-gray);
+  border-radius: 10px;
+  padding: 14px 18px;
+  text-align: center;
+  min-width: 140px;
+  flex-shrink: 0;
+}
+.flow-step .flow-icon { font-size: 24px; margin-bottom: 4px; }
+.flow-step .flow-label { font-size: 12px; font-weight: 700; color: var(--navy); }
+.flow-step .flow-desc { font-size: 10px; color: var(--mid-gray); margin-top: 2px; }
+.flow-step.active { border-color: var(--teal); background: #f0fdfa; }
+.flow-arrow {
+  font-size: 20px;
+  color: var(--teal);
+  padding: 0 6px;
+  flex-shrink: 0;
+}
+
+/* Links */
+a { color: var(--teal); }
+a:hover { color: var(--deep-blue); }
+
+/* URL example */
+.url-example {
+  background: var(--navy);
+  color: var(--seafoam);
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  word-break: break-all;
+  margin: 12px 0;
+}
+.url-example .dim { color: var(--mid-gray); }
+.url-example .hl { color: var(--accent); }
+
+/* Footer */
+.footer {
+  text-align: center;
+  padding: 24px;
+  color: var(--mid-gray);
+  font-size: 11px;
+  border-top: 1px solid var(--light-gray);
+  margin-top: 40px;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>UTM Link Tracker<br>操作マニュアル</h1>
+  <p>外部リンクアクセス計測システムの使い方</p>
+  <span class="badge">セゾンテクノロジー コーポレートコミュニケーション部</span>
+</div>
+
+<div class="nav">
+  <div class="nav-inner">
+    <a href="#overview">全体像</a>
+    <a href="#flow">計測の仕組み</a>
+    <a href="#generate">URL発行手順</a>
+    <a href="#register">リダイレクト登録</a>
+    <a href="#verify">動作確認</a>
+    <a href="#utm-rules">UTM 命名規則</a>
+    <a href="#faq">FAQ</a>
+    <a href="#links">リンク集</a>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- 1. Overview -->
+  <div class="section" id="overview">
+    <h2><span class="section-number">1</span>全体像</h2>
+    <p>このシステムは、X（Twitter）やチラシなどの外部リンクが<strong>何回クリックされたか</strong>を GA4 で計測するためのものです。</p>
+
+    <div class="card card-info">
+      <div class="card-title">構成要素</div>
+      <table class="doc-table">
+        <tr><th style="width:200px">ツール</th><th>役割</th><th>URL</th></tr>
+        <tr>
+          <td><strong>UTM Link Generator</strong></td>
+          <td>UTMパラメータ付きURL・QRコードを発行する管理ツール</td>
+          <td><a href="https://casa2024takayama.github.io/testLP/utm-generator.html" target="_blank">開く ↗</a></td>
+        </tr>
+        <tr>
+          <td><strong>管理用一覧</strong></td>
+          <td>登録済みリダイレクトの一覧表示</td>
+          <td><a href="https://casa2024takayama.github.io/testLP/" target="_blank">開く ↗</a></td>
+        </tr>
+        <tr>
+          <td><strong>GitHub リポジトリ</strong></td>
+          <td>ソースコード・設定ファイルの管理</td>
+          <td><a href="https://github.com/casa2024takayama/testLP" target="_blank">開く ↗</a></td>
+        </tr>
+        <tr>
+          <td><strong>GA4</strong></td>
+          <td>アクセスイベントの記録・分析</td>
+          <td>GA4 管理画面</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- 2. Flow -->
+  <div class="section" id="flow">
+    <h2><span class="section-number">2</span>計測の仕組み</h2>
+    <p>ユーザーがリダイレクトURLにアクセスすると、GA4 にイベントが記録された後、本来の転送先に自動遷移します。</p>
+
+    <div class="flow-diagram">
+      <div class="flow-step">
+        <div class="flow-icon">📱</div>
+        <div class="flow-label">ユーザーがクリック</div>
+        <div class="flow-desc">SNS投稿やQRコードから</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step active">
+        <div class="flow-icon">📊</div>
+        <div class="flow-label">リダイレクトページ</div>
+        <div class="flow-desc">GA4イベント送信（0.8秒）</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-icon">🌐</div>
+        <div class="flow-label">転送先ページ</div>
+        <div class="flow-desc">コーポレートサイト等</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-icon">📈</div>
+        <div class="flow-label">GA4で確認</div>
+        <div class="flow-desc">リアルタイム / レポート</div>
+      </div>
+    </div>
+
+    <div class="card card-warn">
+      <div class="card-title">⚡ ポイント</div>
+      <p style="margin:0; font-size:13px;">リダイレクトページの滞在は約0.8秒。ユーザーにはほぼ気づかれません。その間に GA4 へ <code>link_click_redirect</code> イベントが送信されます。</p>
+    </div>
+  </div>
+
+  <!-- 3. Generate -->
+  <div class="section" id="generate">
+    <h2><span class="section-number">3</span>URL発行手順</h2>
+    <p><a href="https://casa2024takayama.github.io/testLP/utm-generator.html" target="_blank">UTM Link Generator</a> を使ってURLを発行します。</p>
+
+    <ol class="steps">
+      <li>
+        <strong>転送先URL</strong>を入力<br>
+        ユーザーが最終的にたどり着くページのURL。例: <code>https://www.saison-technology.com/</code>
+      </li>
+      <li>
+        <strong>ページ識別名（slug）</strong>を入力<br>
+        リダイレクトURLの末尾IDになります。英数字・ハイフン・アンダースコアのみ。<br>
+        <div class="url-example">
+          <span class="dim">https://casa2024takayama.github.io/testLP/dev/</span><span class="hl">ここに識別名が入る</span>
+        </div>
+        例: <code>x_sns</code>、<code>nikochou_qr</code>、<code>summer_lp</code>
+      </li>
+      <li>
+        <strong>UTMパラメータ</strong>を選択・入力<br>
+        <code>utm_source</code>（流入元）、<code>utm_medium</code>（カテゴリ）、<code>utm_campaign</code>（施策名）は必須。<code>utm_content</code> は任意。
+      </li>
+      <li>
+        <strong>管理タグ・ラベル</strong>を入力（任意）<br>
+        GA4 でフィルタするときに使うタグと、管理用のメモ。
+      </li>
+      <li>
+        <strong>「URL を生成」ボタン</strong>をクリック<br>
+        リダイレクトURL、QRコード、redirects.json 用エントリが一括生成されます。
+      </li>
+    </ol>
+
+    <div class="card card-info">
+      <div class="card-title">生成結果に含まれるもの</div>
+      <table class="doc-table">
+        <tr><th>項目</th><th>用途</th></tr>
+        <tr><td><strong>リダイレクトURL</strong></td><td>SNS投稿やチラシに掲載するURL。コピーボタンで取得。</td></tr>
+        <tr><td><strong>QRコード</strong></td><td>PNGでダウンロード可能。チラシや名刺に印刷。</td></tr>
+        <tr><td><strong>redirects.json エントリ</strong></td><td>テスト用リダイレクトページを登録するためのJSON。次の手順で使います。</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- 4. Register -->
+  <div class="section" id="register">
+    <h2><span class="section-number">4</span>リダイレクトページの登録</h2>
+    <p>UTM Generator で生成した JSON エントリを <code>redirects.json</code> に追記すると、GitHub Actions が自動でリダイレクトページを生成・デプロイします。</p>
+
+    <ol class="steps">
+      <li>
+        UTM Generator の生成結果から <strong>JSON エントリ</strong>を「コピー」ボタンでコピー
+      </li>
+      <li>
+        GitHub の <a href="https://github.com/casa2024takayama/testLP/blob/main/redirects.json" target="_blank">redirects.json</a> を開き、<strong>鉛筆アイコン（Edit）</strong>をクリック
+      </li>
+      <li>
+        最後のエントリの <code>}</code> の後ろに <strong>カンマ <code>,</code> を追加</strong>し、コピーした JSON を貼り付け
+<pre><span class="comment">    // ← 既存の最後のエントリ</span>
+    }<span class="highlight">,</span>
+    <span class="highlight">{
+      "slug": "新しいエントリ",
+      ...
+    }</span>
+  ]
+}</pre>
+      </li>
+      <li>
+        <strong>「Commit changes」</strong>で保存 → GitHub Actions が自動でビルド＆デプロイ（1〜2分）
+      </li>
+      <li>
+        Actions タブで<strong>緑チェック</strong>が付いたら完了。リダイレクトURLにアクセスして動作確認。
+      </li>
+    </ol>
+
+    <div class="card card-warn">
+      <div class="card-title">⚠️ よくあるミス</div>
+      <p style="margin:0; font-size:13px;">
+        <strong>カンマ忘れ</strong>: 既存エントリと新エントリの間にカンマ <code>,</code> がないと JSON が壊れてビルドが失敗します。<br>
+        <strong>slug の重複</strong>: 同じ slug が既にある場合、上書きされます。別の識別名をつけてください。<br>
+        <strong>Actions が赤バツ</strong>: redirects.json の JSON 構文エラーが原因のことが多いです。<a href="https://jsonlint.com/" target="_blank">JSONLint</a> で検証してください。
+      </p>
+    </div>
+  </div>
+
+  <!-- 5. Verify -->
+  <div class="section" id="verify">
+    <h2><span class="section-number">5</span>動作確認</h2>
+
+    <h3>リダイレクトの確認</h3>
+    <ol class="steps">
+      <li>生成されたリダイレクトURLにアクセス（PCまたはスマホ）</li>
+      <li>0.8秒後に転送先ページに遷移すれば成功</li>
+    </ol>
+
+    <h3>GA4 リアルタイムでの確認</h3>
+    <ol class="steps">
+      <li>GA4 を開き、左メニューの<strong>「リアルタイムの概要」</strong>をクリック</li>
+      <li>別のデバイス（スマホ等）でリダイレクトURLにアクセス</li>
+      <li>30秒以内に「イベント数：イベント名別」に <code>link_click_redirect</code> が表示されれば成功</li>
+    </ol>
+
+    <div class="card card-info">
+      <div class="card-title">GA4 で確認できるイベントパラメータ</div>
+      <table class="doc-table">
+        <tr><th>パラメータ</th><th>内容</th><th>例</th></tr>
+        <tr><td><code>link_slug</code></td><td>ページ識別名</td><td>x_sns</td></tr>
+        <tr><td><code>link_tag</code></td><td>管理タグ</td><td>x-campaign</td></tr>
+        <tr><td><code>link_label</code></td><td>ラベル（メモ）</td><td>ニコ超2026 QR用</td></tr>
+        <tr><td><code>link_destination</code></td><td>転送先URL</td><td>https://www.saison-technology.com/...</td></tr>
+      </table>
+      <p style="margin:8px 0 0; font-size:12px; color:var(--mid-gray);">※ パラメータの内訳はカスタムディメンション登録後、24時間程度で標準レポートに表示されます。リアルタイムレポートではイベント名のみ即時確認可能です。</p>
+    </div>
+  </div>
+
+  <!-- 6. UTM Rules -->
+  <div class="section" id="utm-rules">
+    <h2><span class="section-number">6</span>UTM 命名規則</h2>
+
+    <h3>パラメータ一覧</h3>
+    <table class="doc-table">
+      <tr><th>パラメータ</th><th>役割</th><th>記述ルール</th><th>例</th></tr>
+      <tr>
+        <td><code>utm_source</code></td>
+        <td>流入元サイト</td>
+        <td>媒体名（プルダウンから選択 or 手入力）</td>
+        <td><code>x</code>, <code>facebook</code>, <code>flyer</code></td>
+      </tr>
+      <tr>
+        <td><code>utm_medium</code></td>
+        <td>流入カテゴリ</td>
+        <td>固定値から選択</td>
+        <td><code>social</code>, <code>cpc</code>, <code>email</code>, <code>other</code></td>
+      </tr>
+      <tr>
+        <td><code>utm_campaign</code></td>
+        <td>施策名</td>
+        <td>命名規則に従って入力</td>
+        <td><code>FY25_cc_202604_nikochou</code></td>
+      </tr>
+      <tr>
+        <td><code>utm_content</code></td>
+        <td>訴求詳細</td>
+        <td>任意。広告クリエイティブやリンク箇所</td>
+        <td><code>qr_x_profile</code>, <code>banner_a</code></td>
+      </tr>
+    </table>
+
+    <h3>utm_campaign の命名規則</h3>
+    <div class="card card-accent">
+      <pre style="margin:0; background:transparent; color:var(--dark-text); padding:0;"><span class="highlight">{年度}_{部署}_{日付}_{施策名}</span>
+
+例:
+  FY25_cc_202604_nikochou     ← コー推・ニコ超2026
+  FY25_mkt_202610_days26      ← マーケ・HULFT Days 2026
+  ongoing_mkt_wp_sap          ← マーケ・常設ホワイトペーパー</pre>
+    </div>
+
+    <h3>utm_source の選択肢</h3>
+    <table class="doc-table">
+      <tr><th>値</th><th>意味</th></tr>
+      <tr><td><code>x</code></td><td>X（Twitter）</td></tr>
+      <tr><td><code>facebook</code></td><td>Facebook</td></tr>
+      <tr><td><code>linkedin</code></td><td>LinkedIn</td></tr>
+      <tr><td><code>google</code></td><td>Google</td></tr>
+      <tr><td><code>flyer</code></td><td>チラシ・QRコード</td></tr>
+      <tr><td><code>employee</code></td><td>社内（社員経由）</td></tr>
+      <tr><td><code>peatix</code> / <code>connpass</code> 等</td><td>イベントプラットフォーム</td></tr>
+      <tr><td><code>jbpress</code> / <code>nikkeibp</code> 等</td><td>メディア</td></tr>
+    </table>
+  </div>
+
+  <!-- 7. FAQ -->
+  <div class="section" id="faq">
+    <h2><span class="section-number">7</span>FAQ</h2>
+
+    <div class="card" style="margin-bottom:12px;">
+      <div class="card-title">Q. 同じ slug を使いたい場合は？</div>
+      <p style="margin:0; font-size:13px;">slug は一意である必要があります。同じ slug で <code>redirects.json</code> に追記すると、後から追加した方で上書きされます。別の識別名（例: <code>x_sns_v2</code>）にしてください。</p>
+    </div>
+
+    <div class="card" style="margin-bottom:12px;">
+      <div class="card-title">Q. GA4 のリアルタイムにイベントが出ない</div>
+      <p style="margin:0; font-size:13px;">リアルタイムレポートは過去30分のデータを表示します。アクセス直後に確認してください。また、広告ブロッカーが有効だと GA4 タグがブロックされる場合があります。</p>
+    </div>
+
+    <div class="card" style="margin-bottom:12px;">
+      <div class="card-title">Q. GitHub Actions が失敗した（赤バツ）</div>
+      <p style="margin:0; font-size:13px;"><code>redirects.json</code> の JSON 構文エラーが最も多い原因です。カンマの過不足を確認するか、<a href="https://jsonlint.com/" target="_blank">JSONLint</a> に貼り付けて検証してください。</p>
+    </div>
+
+    <div class="card" style="margin-bottom:12px;">
+      <div class="card-title">Q. 発行履歴が消えた</div>
+      <p style="margin:0; font-size:13px;">UTM Generator の発行履歴はブラウザの localStorage に保存されています。ブラウザのキャッシュクリアや別ブラウザでは表示されません。重要な履歴は CSV エクスポートで保存してください。</p>
+    </div>
+
+    <div class="card" style="margin-bottom:12px;">
+      <div class="card-title">Q. 本番環境でも使える？</div>
+      <p style="margin:0; font-size:13px;">現在は GitHub Pages 上のテスト環境（<code>/dev/</code> 配下）です。本番のリダイレクトページはマーケ部門が自社サイト上に構築します。UTM Generator と命名規則はそのまま流用できます。</p>
+    </div>
+
+    <div class="card" style="margin-bottom:12px;">
+      <div class="card-title">Q. 既存の GA4 計測に影響はある？</div>
+      <p style="margin:0; font-size:13px;">ありません。リダイレクトページ経由のアクセスは <code>link_click_redirect</code> という専用イベントで記録されるため、既存の page_view やコンバージョン計測とは独立しています。</p>
+    </div>
+  </div>
+
+  <!-- 8. Links -->
+  <div class="section" id="links">
+    <h2><span class="section-number">8</span>リンク集</h2>
+    <table class="doc-table">
+      <tr><th>ツール</th><th>URL</th></tr>
+      <tr>
+        <td>UTM Link Generator</td>
+        <td><a href="https://casa2024takayama.github.io/testLP/utm-generator.html" target="_blank">https://casa2024takayama.github.io/testLP/utm-generator.html</a></td>
+      </tr>
+      <tr>
+        <td>管理用一覧</td>
+        <td><a href="https://casa2024takayama.github.io/testLP/" target="_blank">https://casa2024takayama.github.io/testLP/</a></td>
+      </tr>
+      <tr>
+        <td>GitHub リポジトリ</td>
+        <td><a href="https://github.com/casa2024takayama/testLP" target="_blank">https://github.com/casa2024takayama/testLP</a></td>
+      </tr>
+      <tr>
+        <td>redirects.json（直接編集）</td>
+        <td><a href="https://github.com/casa2024takayama/testLP/blob/main/redirects.json" target="_blank">GitHub で開く</a></td>
+      </tr>
+      <tr>
+        <td>このマニュアル</td>
+        <td><a href="https://casa2024takayama.github.io/testLP/manual.html" target="_blank">https://casa2024takayama.github.io/testLP/manual.html</a></td>
+      </tr>
+      <tr>
+        <td>JSON 構文チェック</td>
+        <td><a href="https://jsonlint.com/" target="_blank">JSONLint</a></td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="footer">
+    UTM Link Tracker — セゾンテクノロジー コーポレートコミュニケーション部<br>
+    最終更新: 2026年3月
+  </div>
+
+</div>
+
+</body>
+</html>
