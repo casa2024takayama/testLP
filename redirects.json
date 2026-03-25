@@ -1,6 +1,19 @@
 {
   "redirects": [
     {
+      "slug": "x_sns",
+      "path": "x_sns",
+      "destination": "https://www.saison-technology.com/",
+      "tag": "x-campaign",
+      "label": "ニコ超2026 QR Xプロフィール用",
+      "utm": {
+        "source": "flyer",
+        "medium": "other",
+        "campaign": "FY25_cc_202604_nikochou",
+        "content": "qr_x_profile"
+      }
+    },
+    {
       "slug": "test-01",
       "destination": "https://www.saison-technology.com/",
       "tag": "test",
