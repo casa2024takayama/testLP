@@ -33,6 +33,19 @@
       "destination": "https://www.saison-technology.com/",
       "tag": "x-campaign",
       "label": "X施策テスト用"
-    }
+    },
+    {
+  "slug": "x_sns",
+  "path": "dev/x_sns",
+  "destination": "https://x.com/saison_sns",
+  "tag": "x-campaign",
+  "label": "ニコ超2026QRコード動作確認",
+  "utm": {
+    "source": "flyer",
+    "medium": "other",
+    "campaign": "FY25_cc_20260325_test",
+    "content": "qr_x_plofile"
+  }
+}
   ]
 }
