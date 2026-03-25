@@ -1,4 +1,4 @@
-﻿{
+{
   "redirects": [
     {
       "slug": "test-01",
@@ -14,7 +14,7 @@
     },
     {
       "slug": "x-campaign-01",
-      "destination": "https://x.com/saison_sns",
+      "destination": "https://www.saison-technology.com/",
       "tag": "x-campaign",
       "label": "X施策テスト用"
     }
