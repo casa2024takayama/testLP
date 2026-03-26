@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>ユースケースガイド — UTM Link Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy: #0F2B46;
+  --deep-blue: #065A82;
+  --teal: #028090;
+  --seafoam: #00A896;
+  --mint: #02C39A;
+  --white: #FFFFFF;
+  --off-white: #F4F7FA;
+  --light-gray: #E8EEF2;
+  --mid-gray: #7A8A99;
+  --dark-text: #1A2332;
+  --accent: #F59E0B;
+  --font-body: 'Noto Sans JP', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--off-white);
+  color: var(--dark-text);
+  line-height: 1.8;
+  font-size: 14px;
+}
+
+.header {
+  background: var(--navy);
+  padding: 40px 24px 32px;
+  text-align: center;
+}
+.header h1 { color: var(--white); font-size: 26px; font-weight: 900; margin-bottom: 8px; }
+.header p { color: var(--seafoam); font-size: 14px; }
+.header .badge { display: inline-block; background: var(--teal); color: var(--white); font-size: 11px; padding: 3px 12px; border-radius: 20px; margin-top: 12px; }
+
+.nav {
+  background: var(--white);
+  border-bottom: 1px solid var(--light-gray);
+  padding: 12px 24px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.nav-inner { max-width: 820px; margin: 0 auto; display: flex; gap: 6px; flex-wrap: wrap; }
+.nav a { color: var(--mid-gray); text-decoration: none; font-size: 11px; font-weight: 500; padding: 4px 10px; border-radius: 6px; transition: all 0.2s; }
+.nav a:hover { color: var(--teal); background: var(--off-white); }
+
+.main { max-width: 820px; margin: 0 auto; padding: 32px 24px 80px; }
+
+/* Intro */
+.intro {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 24px 28px;
+  margin-bottom: 32px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  border-left: 4px solid var(--teal);
+}
+.intro h2 { font-size: 16px; font-weight: 700; color: var(--navy); margin-bottom: 10px; }
+.intro p { margin-bottom: 8px; }
+.intro .key-question {
+  background: var(--navy);
+  color: var(--seafoam);
+  padding: 14px 20px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  text-align: center;
+  margin: 16px 0 8px;
+}
+
+/* Use Case */
+.usecase {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 28px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+.usecase-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 2px solid var(--light-gray);
+}
+.usecase-number {
+  width: 36px;
+  height: 36px;
+  background: var(--teal);
+  color: var(--white);
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.usecase-title { font-size: 17px; font-weight: 700; color: var(--navy); }
+
+.usecase h4 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--deep-blue);
+  margin: 18px 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.usecase h4 .tag {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+.tag-question { background: #dbeafe; color: #1e40af; }
+.tag-setting { background: #d1fae5; color: #065f46; }
+.tag-insight { background: #fef3c7; color: #92400e; }
+
+.param-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0 12px;
+  font-size: 13px;
+}
+.param-table th {
+  background: var(--light-gray);
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 500;
+  color: var(--deep-blue);
+}
+.param-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--light-gray);
+}
+.param-table code {
+  background: #e2e8f0;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--deep-blue);
+}
+
+.insight-box {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: #92400e;
+  line-height: 1.8;
+  margin-top: 8px;
+}
+
+.multi-example {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin: 8px 0;
+}
+.example-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--mid-gray);
+  margin-bottom: 2px;
+}
+
+/* Principles */
+.principles {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 28px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+.principles h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--light-gray);
+}
+.principle-item {
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  background: var(--off-white);
+  border-radius: 8px;
+  border-left: 3px solid var(--teal);
+}
+.principle-item strong { color: var(--navy); }
+.principle-item p { margin: 4px 0 0; font-size: 13px; color: var(--mid-gray); }
+
+.footer {
+  text-align: center;
+  padding: 24px;
+  color: var(--mid-gray);
+  font-size: 11px;
+  border-top: 1px solid var(--light-gray);
+  margin-top: 40px;
+}
+.footer a { color: var(--teal); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>UTMリンク計測<br>ユースケースガイド</h1>
+  <p>こんな時、こんな分析に使えます</p>
+  <span class="badge">セゾンテクノロジー コーポレートコミュニケーション部</span>
+</div>
+
+<div class="nav">
+  <div class="nav-inner">
+    <a href="#intro">考え方</a>
+    <a href="#uc1">X投稿</a>
+    <a href="#uc2">イベント集客</a>
+    <a href="#uc3">note送客</a>
+    <a href="#uc4">セミナー申込</a>
+    <a href="#uc5">外部メディア</a>
+    <a href="#uc6">名刺・印刷物</a>
+    <a href="#principles">設計原則</a>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- Intro -->
+  <div class="intro" id="intro">
+    <h2>パラメータ設計の考え方</h2>
+    <p>「パラメータをつけてURLを作る」だけでなく、<strong>何を知りたいからこのパラメータを選ぶのか</strong>を意識することで、後から使えるデータが残ります。</p>
+    <p>パラメータを設定するとき、常にこの問いを持ってください。</p>
+    <div class="key-question">「この施策が終わったとき、何と何を比較したいか？」</div>
+    <p>比較したい軸がそのまま UTM パラメータの設計になります。<code>utm_source</code> は「どこから来たか」、<code>utm_medium</code> は「どんな手段で来たか」、<code>utm_campaign</code> は「何の施策で来たか」、<code>utm_content</code> は「同じ施策の中のどのリンクか」を分けるためのものです。</p>
+  </div>
+
+  <!-- UC1: X -->
+  <div class="usecase" id="uc1">
+    <div class="usecase-header">
+      <div class="usecase-number">1</div>
+      <div class="usecase-title">X（Twitter）の通常投稿</div>
+    </div>
+    <h4><span class="tag tag-question">知りたいこと</span></h4>
+    <p>投稿ごとにリンクが何回踏まれたか。どんなテーマの投稿がクリックされやすいか。</p>
+    <h4><span class="tag tag-setting">設定例</span></h4>
+    <table class="param-table">
+      <tr><th>項目</th><th>値</th><th>意図</th></tr>
+      <tr><td>slug</td><td><code>x_post_0326_ai</code></td><td>投稿日＋テーマで識別</td></tr>
+      <tr><td>utm_source</td><td><code>x</code></td><td>X からの流入</td></tr>
+      <tr><td>utm_medium</td><td><code>social</code></td><td>SNS 経由</td></tr>
+      <tr><td>utm_campaign</td><td><code>ongoing_cc_x_organic</code></td><td>通常運用の有機投稿（固定）</td></tr>
+      <tr><td>utm_content</td><td><code>ai_dependency_column</code></td><td>投稿テーマで分ける</td></tr>
+    </table>
+    <h4><span class="tag tag-insight">後から分かること</span></h4>
+    <div class="insight-box">campaign を固定して content を投稿テーマごとに変えると、GA4 で「通常のX運用の中で、どのテーマの投稿が一番クリックを生んだか」が比較できます。月次で振り返れば、フォロワーが反応するテーマの傾向が見えてきます。</div>
+  </div>
+
+  <!-- UC2: Event -->
+  <div class="usecase" id="uc2">
+    <div class="usecase-header">
+      <div class="usecase-number">2</div>
+      <div class="usecase-title">イベント（ニコ超・JAWS DAYS 等）の集客導線</div>
+    </div>
+    <h4><span class="tag tag-question">知りたいこと</span></h4>
+    <p>イベントの集客はどのチャネルが効いたか。事前告知と当日配布で差があるか。</p>
+    <h4><span class="tag tag-setting">設定例 — 3チャネルで同じ campaign を使う</span></h4>
+    <div class="multi-example">
+      <div>
+        <div class="example-label">▼ 事前告知 X投稿</div>
+        <table class="param-table">
+          <tr><td>slug</td><td><code>nikochou_pre_x</code></td></tr>
+          <tr><td>utm_source / medium</td><td><code>x</code> / <code>social</code></td></tr>
+          <tr><td>utm_campaign</td><td><code>FY25_cc_202604_nikochou</code></td></tr>
+          <tr><td>utm_content</td><td><code>pre_announce</code></td></tr>
+        </table>
+      </div>
+      <div>
+        <div class="example-label">▼ 当日ブース配布チラシ QR</div>
+        <table class="param-table">
+          <tr><td>slug</td><td><code>nikochou_booth_qr</code></td></tr>
+          <tr><td>utm_source / medium</td><td><code>flyer</code> / <code>other</code></td></tr>
+          <tr><td>utm_campaign</td><td><code>FY25_cc_202604_nikochou</code></td></tr>
+          <tr><td>utm_content</td><td><code>booth_flyer</code></td></tr>
+        </table>
+      </div>
+      <div>
+        <div class="example-label">▼ イベント後レポート note記事</div>
+        <table class="param-table">
+          <tr><td>slug</td><td><code>nikochou_note_report</code></td></tr>
+          <tr><td>utm_source / medium</td><td><code>note</code> / <code>referral</code></td></tr>
+          <tr><td>utm_campaign</td><td><code>FY25_cc_202604_nikochou</code></td></tr>
+          <tr><td>utm_content</td><td><code>event_report</code></td></tr>
+        </table>
+      </div>
+    </div>
+    <h4><span class="tag tag-insight">後から分かること</span></h4>
+    <div class="insight-box">campaign を同じにしておくことで、GA4 で <code>FY25_cc_202604_nikochou</code> でフィルタすれば、事前X告知・当日チラシ・事後noteレポートの3チャネルのクリック数を横並びで比較できます。「ニコ超の集客は事前告知が7割で、当日配布は意外と少なかった」といった知見が数字で出ます。</div>
+  </div>
+
+  <!-- UC3: note -->
+  <div class="usecase" id="uc3">
+    <div class="usecase-header">
+      <div class="usecase-number">3</div>
+      <div class="usecase-title">note 記事からの送客</div>
+    </div>
+    <h4><span class="tag tag-question">知りたいこと</span></h4>
+    <p>note の記事が自社サイトへの流入にどれだけ貢献しているか。どの記事が送客力があるか。</p>
+    <h4><span class="tag tag-setting">設定例</span></h4>
+    <table class="param-table">
+      <tr><th>項目</th><th>値</th><th>意図</th></tr>
+      <tr><td>slug</td><td><code>note_plg_column</code></td><td>記事テーマで識別</td></tr>
+      <tr><td>utm_source</td><td><code>note</code></td><td>note からの流入</td></tr>
+      <tr><td>utm_medium</td><td><code>referral</code></td><td>外部サイトリンク</td></tr>
+      <tr><td>utm_campaign</td><td><code>ongoing_cc_note</code></td><td>note 通常運用（固定）</td></tr>
+      <tr><td>utm_content</td><td><code>plg_toha</code></td><td>記事タイトルの略称</td></tr>
+    </table>
+    <h4><span class="tag tag-insight">後から分かること</span></h4>
+    <div class="insight-box">note のダッシュボードでは PV とスキしか見えませんが、この計測なら「note → 自社サイト」への実際の遷移数が取れます。記事ごとに content を変えれば、PV は多いけどクリックされない記事と、PV は少ないが送客力のある記事の違いが見えます。</div>
+  </div>
+
+  <!-- UC4: Seminar -->
+  <div class="usecase" id="uc4">
+    <div class="usecase-header">
+      <div class="usecase-number">4</div>
+      <div class="usecase-title">セミナー・ウェビナーの申込導線</div>
+    </div>
+    <h4><span class="tag tag-question">知りたいこと</span></h4>
+    <p>セミナーの申込ページへの誘導は、どの告知チャネルが効果的か。</p>
+    <h4><span class="tag tag-setting">設定例 — チャネル別に source を分ける</span></h4>
+    <div class="multi-example">
+      <div>
+        <div class="example-label">▼ メルマガ告知</div>
+        <table class="param-table">
+          <tr><td>slug</td><td><code>seminar_0415_email</code></td></tr>
+          <tr><td>utm_source / medium</td><td><code>mailmagazine</code> / <code>email</code></td></tr>
+          <tr><td>utm_campaign</td><td><code>FY25_mkt_202604_privateseminar</code></td></tr>
+          <tr><td>utm_content</td><td><code>email_main</code></td></tr>
+        </table>
+      </div>
+      <div>
+        <div class="example-label">▼ X告知</div>
+        <table class="param-table">
+          <tr><td>slug</td><td><code>seminar_0415_x</code></td></tr>
+          <tr><td>utm_source / medium</td><td><code>x</code> / <code>social</code></td></tr>
+          <tr><td>utm_campaign</td><td><code>FY25_mkt_202604_privateseminar</code></td></tr>
+          <tr><td>utm_content</td><td><code>x_announce</code></td></tr>
+        </table>
+      </div>
+      <div>
+        <div class="example-label">▼ 社員の個人SNS共有</div>
+        <table class="param-table">
+          <tr><td>slug</td><td><code>seminar_0415_employee</code></td></tr>
+          <tr><td>utm_source / medium</td><td><code>employee</code> / <code>social</code></td></tr>
+          <tr><td>utm_campaign</td><td><code>FY25_mkt_202604_privateseminar</code></td></tr>
+          <tr><td>utm_content</td><td><code>employee_share</code></td></tr>
+        </table>
+      </div>
+    </div>
+    <h4><span class="tag tag-insight">後から分かること</span></h4>
+    <div class="insight-box">同じセミナーの campaign でフィルタすれば、メルマガ・X・社員シェアの集客力が一目で比較できます。「次のセミナーはメルマガの告知タイミングを早めよう」「社員シェアの効果が意外と高いから、社内告知を強化しよう」といった判断ができます。</div>
+  </div>
+
+  <!-- UC5: Media -->
+  <div class="usecase" id="uc5">
+    <div class="usecase-header">
+      <div class="usecase-number">5</div>
+      <div class="usecase-title">外部メディア記事からの流入</div>
+    </div>
+    <h4><span class="tag tag-question">知りたいこと</span></h4>
+    <p>JBpress、ITmedia 等の外部メディア記事からの流入はどれくらいか。掲載費用に見合っているか。</p>
+    <h4><span class="tag tag-setting">設定例</span></h4>
+    <table class="param-table">
+      <tr><th>項目</th><th>値</th><th>意図</th></tr>
+      <tr><td>slug</td><td><code>jbpress_hulft10_article</code></td><td>メディア＋記事テーマで識別</td></tr>
+      <tr><td>utm_source</td><td><code>jbpress</code></td><td>JBpress からの流入</td></tr>
+      <tr><td>utm_medium</td><td><code>referral</code></td><td>外部サイトリンク</td></tr>
+      <tr><td>utm_campaign</td><td><code>FY25_mkt_jbpress_hulft10</code></td><td>メディア名＋テーマ</td></tr>
+      <tr><td>utm_content</td><td><code>article_link</code></td><td>記事内リンク</td></tr>
+    </table>
+    <h4><span class="tag tag-insight">後から分かること</span></h4>
+    <div class="insight-box">メディアごとの送客力を定量比較できます。掲載費用と合わせれば、メディア別の CPC（クリック単価）相当の指標も算出できます。次の出稿判断の材料になります。</div>
+  </div>
+
+  <!-- UC6: Namecard -->
+  <div class="usecase" id="uc6">
+    <div class="usecase-header">
+      <div class="usecase-number">6</div>
+      <div class="usecase-title">名刺・印刷物の QR コード</div>
+    </div>
+    <h4><span class="tag tag-question">知りたいこと</span></h4>
+    <p>名刺交換やパンフレット配布からの Web アクセスがあるか。</p>
+    <h4><span class="tag tag-setting">設定例</span></h4>
+    <table class="param-table">
+      <tr><th>項目</th><th>値</th><th>意図</th></tr>
+      <tr><td>slug</td><td><code>namecard_takayama</code></td><td>担当者名で識別</td></tr>
+      <tr><td>utm_source</td><td><code>namecard</code></td><td>名刺からの流入</td></tr>
+      <tr><td>utm_medium</td><td><code>other</code></td><td>アナログ接点</td></tr>
+      <tr><td>utm_campaign</td><td><code>ongoing_cc_namecard</code></td><td>名刺運用（固定）</td></tr>
+      <tr><td>utm_content</td><td><code>takayama</code></td><td>担当者別に分ける</td></tr>
+    </table>
+    <h4><span class="tag tag-insight">後から分かること</span></h4>
+    <div class="insight-box">アナログ接点からのデジタル流入という、これまで完全にブラックボックスだった領域が可視化されます。数は少なくても「名刺交換後に実際にサイトを見てくれた人がいる」というデータは、営業との連携やイベント参加の費用対効果の説明に使えます。</div>
+  </div>
+
+  <!-- Principles -->
+  <div class="principles" id="principles">
+    <h2>パラメータ設計の原則</h2>
+    <div class="principle-item">
+      <strong>campaign は「施策単位」で揃える</strong>
+      <p>同じ施策に関わる全チャネルで同じ campaign 名にすることで、施策全体の効果を横串で見られるようになります。</p>
+    </div>
+    <div class="principle-item">
+      <strong>source と medium は「どこから・どうやって」を正確に</strong>
+      <p>GA4 のチャネルグループの自動分類にも影響するので、ルール表の選択肢から選んでください。</p>
+    </div>
+    <div class="principle-item">
+      <strong>content は「同じ施策内の比較」に使う</strong>
+      <p>投稿テーマ、配布場所、クリエイティブの種類など、「この施策の中で何が効いたか」を分けるために使います。</p>
+    </div>
+    <div class="principle-item">
+      <strong>slug は「何のリンクか一目でわかる名前」に</strong>
+      <p>後から GA4 のレポートを見たときに、slug だけで何のリンクだったか思い出せるように命名してください。</p>
+    </div>
+  </div>
+
+  <div class="footer">
+    <a href="https://casa2024takayama.github.io/testLP/">管理トップ</a> ｜ 
+    <a href="https://casa2024takayama.github.io/testLP/utm-generator.html">UTM Link Generator</a> ｜ 
+    <a href="https://casa2024takayama.github.io/testLP/manual.html">操作マニュアル</a><br><br>
+    UTM Link Tracker — セゾンテクノロジー コーポレートコミュニケーション部｜最終更新: 2026年3月
+  </div>
+
+</div>
+
+</body>
+</html>

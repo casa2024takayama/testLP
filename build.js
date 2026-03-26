@@ -162,6 +162,7 @@ function generateIndex() {
   <div class="tool-link">
     <a href="${config.base_url}/utm-generator.html">📝 UTM Link Generator を開く</a>
     <a href="${config.base_url}/manual.html" style="margin-left:8px;">📖 操作マニュアル</a>
+    <a href="${config.base_url}/usecase-guide.html" style="margin-left:8px;">💡 ユースケースガイド</a>
   </div>
   <table>
     <thead><tr><th>パス</th><th>タグ</th><th>ラベル</th><th>転送先（UTM付き）</th></tr></thead>
@@ -182,7 +183,7 @@ for (const entry of data.redirects) {
 }
 
 // Copy static files
-const staticFiles = ["utm-generator.html", "manual.html"];
+const staticFiles = ["utm-generator.html", "manual.html", "usecase-guide.html"];
 for (const file of staticFiles) {
   if (fs.existsSync(file)) {
     fs.copyFileSync(file, path.join(outputDir, file));
