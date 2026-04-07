@@ -30,18 +30,18 @@ def load_redirects():
 
 def build_qr_url(entry):
     """エントリからQRに設定するURLを生成"""
-    base = entry.get("redirect_base") or entry.get("destination", "")
+    dest = entry.get("destination", "")
     utm = entry.get("utm", {})
     source = utm.get("source", "")
     medium = utm.get("medium", "")
     campaign = utm.get("campaign", "")
     content = utm.get("content", "")
 
-    if not base or not source or not medium or not campaign:
+    if not dest or not source or not medium or not campaign:
         return None
 
-    sep = "&" if "?" in base else "?"
-    url = f"{base}{sep}utm_source={source}&utm_medium={medium}&utm_campaign={campaign}"
+    sep = "&" if "?" in dest else "?"
+    url = f"{dest}{sep}utm_source={source}&utm_medium={medium}&utm_campaign={campaign}"
     if content:
         url += f"&utm_content={content}"
     return url
