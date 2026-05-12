@@ -3,19 +3,37 @@ notion_sync.py
 redirects.json の内容を Notion UTMリンク管理DBに同期するスクリプト。
 - QRに設定するURL をキーに重複チェック
 - 未登録のエントリのみ新規登録（既存レコードは上書きしない）
+- 新規登録時に日付プロパティへ同期実行時刻（UTC）を記録（既定: 発行日・登録日時の両方）
+- 任意で「発行者」を rich_text または select で設定（GitHub 同期であることが分かるように）
 - 実行ログを標準出力に出力
 - Notion API の一時障害（504 等）に対してリトライする
+
+Notion DB のプロパティ名は環境変数で上書き可（既定値は括弧内）。
+  発行日 … 日付（過去の手動発行と同じ列に揃える）
+  登録日時 … 日付（任意。空にしたくない場合は既定のまま）
+  発行者 … rich_text または select（NOTION_ISSUER_TYPE で切替）
 """
 
 import json
 import os
 import random
 import time
+from datetime import datetime, timezone
 
 import requests
 
 NOTION_API_KEY = os.environ["NOTION_API_KEY"]
 DATABASE_ID = os.environ["NOTION_DATABASE_ID"]
+# 日付: 既存DBでは「発行日」に日付が入っていることが多い → こちらも必ずセット
+NOTION_ISSUED_DATE_PROP = os.environ.get("NOTION_ISSUED_DATE_PROP", "発行日").strip()
+# 追加した「登録日時」にも同じ瞬間を入れる（不要なら NOTION_REGISTERED_AT_PROP="" で無効化）
+NOTION_REGISTERED_AT_PROP = os.environ.get("NOTION_REGISTERED_AT_PROP", "登録日時").strip()
+# 発行者: プロパティ名を空にすると送らない
+NOTION_ISSUER_PROP = os.environ.get("NOTION_ISSUER_PROP", "発行者").strip()
+# rich_text（既定） / select — select の場合は NOTION_ISSUER_SELECT_NAME の選択肢が DB に存在すること
+NOTION_ISSUER_TYPE = os.environ.get("NOTION_ISSUER_TYPE", "rich_text").strip().lower()
+NOTION_ISSUER_TEXT = os.environ.get("NOTION_ISSUER_TEXT", "GitHub Actions（notion_sync 自動同期）")
+NOTION_ISSUER_SELECT_NAME = os.environ.get("NOTION_ISSUER_SELECT_NAME", "GitHub自動同期")
 
 HEADERS = {
     "Authorization": f"Bearer {NOTION_API_KEY}",
@@ -135,6 +153,8 @@ def register_entry(entry, qr_url, session=None):
     label = entry.get("label", entry.get("slug", ""))
     tag = entry.get("tag", "")
     dest = entry.get("destination", "")
+    # Notion date は ISO8601（UTC）
+    registered_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
     properties = {
         "リンク名": {"title": [{"text": {"content": label}}]},
@@ -144,8 +164,22 @@ def register_entry(entry, qr_url, session=None):
         "utm_medium": {"rich_text": [{"text": {"content": utm.get("medium", "")}}]},
         "utm_campaign": {"rich_text": [{"text": {"content": utm.get("campaign", "")}}]},
         "utm_content": {"rich_text": [{"text": {"content": utm.get("content", "")}}]},
-        "備考": {"rich_text": [{"text": {"content": f"GitHub自動同期 / tag:{tag}"}}]},
+        "備考": {"rich_text": [{"text": {"content": f"GitHub自動同期 / slug:{entry.get('slug', '')} / tag:{tag}"}}]},
     }
+
+    date_cell = {"date": {"start": registered_at}}
+    if NOTION_ISSUED_DATE_PROP:
+        properties[NOTION_ISSUED_DATE_PROP] = date_cell
+    if NOTION_REGISTERED_AT_PROP:
+        properties[NOTION_REGISTERED_AT_PROP] = date_cell
+
+    if NOTION_ISSUER_PROP:
+        if NOTION_ISSUER_TYPE == "select":
+            properties[NOTION_ISSUER_PROP] = {"select": {"name": NOTION_ISSUER_SELECT_NAME}}
+        else:
+            properties[NOTION_ISSUER_PROP] = {
+                "rich_text": [{"text": {"content": NOTION_ISSUER_TEXT}}]
+            }
 
     if dest:
         properties["転送先URL"] = {"url": dest}
@@ -165,6 +199,14 @@ def register_entry(entry, qr_url, session=None):
 
 def main():
     print("=== Notion UTM Sync 開始 ===")
+    print(
+        f"  日付列: 発行日={NOTION_ISSUED_DATE_PROP or '(未使用)'} "
+        f"/ 登録日時={NOTION_REGISTERED_AT_PROP or '(未使用)'}"
+    )
+    if NOTION_ISSUER_PROP:
+        print(f"  発行者: {NOTION_ISSUER_PROP}（{NOTION_ISSUER_TYPE}）")
+    else:
+        print("  発行者: （未設定・送信しません）")
 
     redirects = load_redirects()
     print(f"redirects.json: {len(redirects)} 件")
@@ -179,7 +221,22 @@ def main():
         for entry in redirects:
             qr_url = build_qr_url(entry)
             if not qr_url:
-                print(f"  [SKIP] URLを生成できません: {entry.get('slug', '?')}")
+                slug = entry.get("slug", "?")
+                utm = entry.get("utm") or {}
+                if not utm:
+                    detail = (
+                        "utm なし（Notion は「QRに設定するURL」= 転送先+UTM のみ同期。"
+                        "リダイレクト用 HTML は utm なしでもビルドされます）"
+                    )
+                elif not entry.get("destination"):
+                    detail = "destination が空"
+                else:
+                    detail = (
+                        "utm に source / medium / campaign のいずれかが不足 "
+                        f"(source={bool(utm.get('source'))}, medium={bool(utm.get('medium'))}, "
+                        f"campaign={bool(utm.get('campaign'))})"
+                    )
+                print(f"  [SKIP] {slug}: {detail}")
                 skip_count += 1
                 continue
 

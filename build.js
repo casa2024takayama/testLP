@@ -53,6 +53,21 @@ function withBuildStampComment(html, meta) {
   return `<!-- ${stamp} -->\n${stripped}`;
 }
 
+/** GitHub Pages の base_url からリポジトリ URL を推定（例: owner.github.io/repo → github.com/owner/repo） */
+function deriveGithubRepoUrlFromPages(baseUrl) {
+  try {
+    const u = new URL(baseUrl);
+    const m = u.hostname.match(/^([^.]+)\.github\.io$/);
+    if (!m) return "";
+    let repo = u.pathname.replace(/\/$/, "");
+    if (repo.startsWith("/")) repo = repo.slice(1);
+    if (!repo) return "";
+    return `https://github.com/${m[1]}/${repo}`;
+  } catch {
+    return "";
+  }
+}
+
 function buildDestination(entry) {
   let url = entry.destination;
   if (entry.utm) {
@@ -172,6 +187,20 @@ function getMode(entry) {
 }
 
 function generateIndex(meta) {
+  const ghRepo = deriveGithubRepoUrlFromPages(config.base_url);
+  const notionWorkflowUrl = ghRepo ? `${ghRepo}/actions/workflows/notion-sync.yml` : "";
+  const notionSyncHtml = `
+  <div class="notion-sync">
+    <strong>Notion 自動同期</strong>（UTMリンク管理データベース）
+    <ul>
+      <li>GitHub Actions の <strong>Notion UTM Sync</strong> が <code>redirects.json</code> を読み、<strong>転送先 + utm（source / medium / campaign 必須）</strong> が揃った行だけを Notion に<strong>未登録分として追加</strong>します。<strong>紐付けキーは <code>slug</code> ではなく</strong>プロパティ「<strong>QRに設定するURL</strong>」（= 転送先に UTM を付けた文字列）です。同一URLなら二重登録しません。</li>
+      <li><code>redirects.json</code> の <strong>slug</strong> は Notion の専用列には出しませんが、<strong>備考</strong>に <code>slug:…</code> として含めます（人間が対応を追いやすくするため）。</li>
+      <li><strong>utm なし</strong>の短縮リンクはこのサイトでは動作しますが、Notion 同期の対象外です。</li>
+      <li>新規登録時、日付は <strong>発行日</strong> と <strong>登録日時</strong> の両方に同じ同期時刻（UTC）を入れます（列名は環境変数で変更可）。<strong>発行者</strong>は既定で rich_text「GitHub Actions（notion_sync 自動同期）」— Notion 側が select 型なら Actions の <code>NOTION_ISSUER_TYPE=select</code> と既存の選択肢名を設定してください。</li>
+      ${notionWorkflowUrl ? `<li>手動実行・ログ確認: <a href="${notionWorkflowUrl}" target="_blank" rel="noopener">Notion UTM Sync（Actions）</a></li>` : ""}
+    </ul>
+  </div>`;
+
   const redirectEntries = data.redirects.filter((e) => getMode(e) === "redirect");
   const directEntries = data.redirects.filter((e) => getMode(e) === "direct");
 
@@ -241,6 +270,11 @@ function generateIndex(meta) {
     button.copy:hover { background:#d5dee6; }
     button.copy.done { background:#02C39A; color:white; border-color:#02C39A; }
     footer.build-meta { margin-top:48px; padding-top:16px; border-top:1px solid #e0e0e0; font-size:12px; color:#888; font-family:ui-monospace,monospace; }
+    .notion-sync { background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; padding:14px 18px; margin-top:14px; font-size:13px; color:#334155; line-height:1.65; }
+    .notion-sync strong { color:#0369a1; }
+    .notion-sync ul { margin:10px 0 0 1.15em; padding:0; }
+    .notion-sync li { margin:6px 0; }
+    .notion-sync code { font-size:12px; background:#e0f2fe; padding:1px 6px; border-radius:4px; }
   </style>
 </head>
 <body>
@@ -252,6 +286,7 @@ function generateIndex(meta) {
     登録リンク数: ${data.redirects.length}件（リダイレクト ${redirectEntries.length} ／ 直接 ${directEntries.length}）
     ｜ GTM: <code>${config.gtm_container_id}</code> ｜ GA4: <code>${config.ga4_measurement_id}</code>
   </div>
+  ${notionSyncHtml}
   <div class="tool-link">
     <a href="${config.base_url}/utm-generator.html">UTM Link Generator を開く</a>
     <a href="${config.base_url}/manual.html" style="margin-left:8px;">操作マニュアル</a>

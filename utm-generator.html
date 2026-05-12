@@ -239,23 +239,41 @@ body {
   <div id="panel-generate" class="panel active">
 
     <div class="card">
-      <div class="card-title"><div class="icon">1</div> リダイレクトページの設定</div>
+      <div class="card-title"><div class="icon">1</div> 基本設定</div>
       <div class="form-grid">
+        <div class="form-group full">
+          <label>掲載のしかた</label>
+          <div class="mode-choice" style="display:flex;flex-direction:column;gap:10px;padding:14px 16px;background:var(--off-white);border-radius:8px;border:1px solid var(--light-gray);">
+            <label style="cursor:pointer;display:flex;align-items:flex-start;gap:10px;font-weight:400;font-size:13px;line-height:1.5;">
+              <input type="radio" name="link_mode" value="redirect" checked onchange="handleModeChange()">
+              <span><strong style="color:var(--deep-blue);">短縮URL経由</strong> — このサイトの <code style="font-size:11px;">…/dev/識別名/</code> へ誘導し、<code style="font-size:11px;">link_click_redirect</code> で GA4 計測（SNS 外部など向け）</span>
+            </label>
+            <label style="cursor:pointer;display:flex;align-items:flex-start;gap:10px;font-weight:400;font-size:13px;line-height:1.5;">
+              <input type="radio" name="link_mode" value="direct" onchange="handleModeChange()">
+              <span><strong style="color:var(--deep-blue);">直接掲載（転送なし）</strong> — 自社サイトの URL に UTM のみ付与したリンクをそのまま掲載。<code style="font-size:11px;">redirects.json</code> では <code style="font-size:11px;">mode: "direct"</code>（掲載先に既に GA4 がある場合など）</span>
+            </label>
+          </div>
+        </div>
         <div class="form-group full">
           <label>転送先URL <span class="required">必須</span> <span class="hint">（ユーザーが最終的にたどり着くページ）</span></label>
           <input type="url" id="destination" placeholder="https://www.saison-technology.com/" value="https://www.saison-technology.com/" oninput="updatePreview()">
         </div>
         <div class="form-group full">
-          <label>ページ識別名 <span class="required">必須</span> <span class="hint">（英数字・ハイフン・アンダースコア。用途がわかる名前をつけてください）</span></label>
+          <label>ページ識別名（slug） <span class="required">必須</span> <span class="hint" id="slug-hint">（英数字・ハイフン・アンダースコア。短縮URLのパスに使われます）</span></label>
           <div class="slug-input-wrapper">
-            <span class="slug-prefix">/dev/</span>
+            <span class="slug-prefix" id="slug-prefix-display">/dev/</span>
             <input type="text" id="slug" placeholder="例: x_sns, nikochou_qr, summer_lp" oninput="updatePreview()">
           </div>
         </div>
         <div class="form-group full">
-          <div class="url-preview-label"><span class="live-dot"></span> 生成されるリダイレクトURL（リアルタイムプレビュー）</div>
+          <div class="url-preview-label"><span class="live-dot"></span> <span id="preview-section-title">生成されるリダイレクトURL（リアルタイムプレビュー）</span></div>
           <div class="url-preview" id="url-preview">
-            <span class="prefix">https://casa2024takayama.github.io/testLP/dev/</span><span class="placeholder-text" id="preview-slug">ここにページ識別名が入ります</span>
+            <div id="preview-inner-redirect">
+              <span class="prefix">https://casa2024takayama.github.io/testLP/dev/</span><span class="placeholder-text" id="preview-slug">ここにページ識別名が入ります</span>
+            </div>
+            <div id="preview-inner-direct" style="display:none;">
+              <span class="placeholder-text" id="preview-direct-full">転送先URL と UTM（必須）を入力すると、掲載用URLのプレビューが表示されます</span>
+            </div>
           </div>
         </div>
       </div>
@@ -344,15 +362,15 @@ body {
       <div class="card">
         <div class="card-title"><div class="icon" style="background: var(--seafoam);">✓</div> 生成結果</div>
 
-        <div style="margin-bottom: 12px;">
-          <label style="font-size:12px; color:var(--mid-gray); margin-bottom:4px; display:block;">リダイレクトURL（このURLを配布・QRにします）</label>
+        <div style="margin-bottom: 12px;" id="result-primary-block">
+          <label style="font-size:12px; color:var(--mid-gray); margin-bottom:4px; display:block;" id="result-primary-label">リダイレクトURL（このURLを配布・QRにします）</label>
           <div class="result-url" id="result-redirect-url">
             <span id="redirect-url-text"></span>
             <button class="copy-btn" onclick="copyText('redirect-url-text')">コピー</button>
           </div>
         </div>
 
-        <div style="margin-bottom: 12px;">
+        <div style="margin-bottom: 12px;" id="result-dest-block">
           <label style="font-size:12px; color:var(--mid-gray); margin-bottom:4px; display:block;">転送先URL（UTMパラメータ付き — ユーザーが最終的にたどり着くURL）</label>
           <div class="result-url" style="color: #cbd5e1;">
             <span id="dest-url-text"></span>
@@ -375,12 +393,20 @@ body {
             <div class="json-output" id="json-output">
               <button class="copy-btn" onclick="copyJSON()">コピー</button>
             </div>
-            <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:8px; padding:14px 16px; margin-top:10px; font-size:12px; color:#166534; line-height:1.8;">
-              <strong style="font-size:13px;">📝 テスト用リダイレクトページの追加手順</strong><br>
+            <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:8px; padding:14px 16px; margin-top:10px; font-size:12px; color:#166534; line-height:1.8;" id="json-howto-box">
+              <strong style="font-size:13px;">📝 redirects.json への追加手順</strong><br>
+              <span id="json-howto-steps-redirect">
               ① 上の JSON を「コピー」ボタンでコピー<br>
               ② GitHub の <code style="background:#dcfce7; padding:1px 5px; border-radius:3px; font-family:var(--font-mono); font-size:11px;">redirects.json</code> を開き、鉛筆アイコン（Edit）をクリック<br>
               ③ 最後のエントリの <code style="background:#dcfce7; padding:1px 5px; border-radius:3px; font-family:var(--font-mono); font-size:11px;">}</code> の後ろに <code style="background:#dcfce7; padding:1px 5px; border-radius:3px; font-family:var(--font-mono); font-size:11px;">,</code>（カンマ）を追加し、コピーした JSON を貼り付け<br>
-              ④ 「Commit changes」で保存 → Actions が自動で走り、1〜2分後にリダイレクトページが生成されます
+              ④ 「Commit changes」で保存 → Actions が自動で走り、1〜2分後に短縮URL用のページが生成されます
+              </span>
+              <span id="json-howto-steps-direct" style="display:none;">
+              ① 上の JSON を「コピー」ボタンでコピー（<code style="background:#dcfce7; padding:1px 5px; border-radius:3px; font-family:var(--font-mono); font-size:11px;">mode: "direct"</code> と <code style="background:#dcfce7; padding:1px 5px; border-radius:3px; font-family:var(--font-mono); font-size:11px;">utm</code> が含まれます）<br>
+              ② GitHub の <code style="background:#dcfce7; padding:1px 5px; border-radius:3px; font-family:var(--font-mono); font-size:11px;">redirects.json</code> の <code style="background:#dcfce7; padding:1px 5px; border-radius:3px; font-family:var(--font-mono); font-size:11px;">redirects</code> 配列に追記<br>
+              ③ <code style="background:#dcfce7; padding:1px 5px; border-radius:3px; font-family:var(--font-mono); font-size:11px;">version.json</code> のバージョンを上げてコミット（CI 要件）<br>
+              ④ デプロイ後、管理一覧の「直接掲載」表に掲載用URLが表示されます（短縮URL用 HTML は生成されません）
+              </span>
             </div>
           </div>
         </div>
@@ -427,6 +453,7 @@ function handleSourceChange() {
   const custom = document.getElementById('utm_source_custom');
   custom.style.display = sel.value === '__custom__' ? 'block' : 'none';
   if (sel.value !== '__custom__') custom.value = '';
+  updatePreview();
 }
 
 function getSourceValue() {
@@ -435,17 +462,69 @@ function getSourceValue() {
   return sel;
 }
 
+function getLinkMode() {
+  const r = document.querySelector('input[name="link_mode"]:checked');
+  return r && r.value === 'direct' ? 'direct' : 'redirect';
+}
+
+function handleModeChange() {
+  const direct = getLinkMode() === 'direct';
+  document.getElementById('preview-section-title').textContent = direct
+    ? '掲載用URL（UTM付き・プレビュー）'
+    : '生成されるリダイレクトURL（リアルタイムプレビュー）';
+  document.getElementById('slug-hint').textContent = direct
+    ? '（管理用。英数字・ハイフン・アンダースコア。掲載URLには含まれません）'
+    : '（英数字・ハイフン・アンダースコア。短縮URLのパスに使われます）';
+  document.getElementById('slug-prefix-display').style.display = direct ? 'none' : '';
+  document.getElementById('preview-inner-redirect').style.display = direct ? 'none' : '';
+  document.getElementById('preview-inner-direct').style.display = direct ? 'block' : 'none';
+  document.getElementById('json-howto-steps-redirect').style.display = direct ? 'none' : '';
+  document.getElementById('json-howto-steps-direct').style.display = direct ? '' : 'none';
+  updatePreview();
+}
+
+/** UTM 必須が揃っていれば転送先+クエリを返す。未入力は null */
+function tryBuildDestWithUTM() {
+  const destination = document.getElementById('destination').value.trim();
+  if (!destination) return null;
+  const source = getSourceValue();
+  const medium = document.getElementById('utm_medium').value;
+  const campaign = document.getElementById('utm_campaign').value.trim();
+  const content = document.getElementById('utm_content').value.trim();
+  if (!source || !medium || !campaign) return null;
+  const params = new URLSearchParams();
+  params.set('utm_source', source);
+  params.set('utm_medium', medium);
+  params.set('utm_campaign', campaign);
+  if (content) params.set('utm_content', content);
+  return destination + (destination.includes('?') ? '&' : '?') + params.toString();
+}
+
 // Real-time URL preview
 function updatePreview() {
+  const direct = getLinkMode() === 'direct';
   const slug = document.getElementById('slug').value.trim();
-  const previewEl = document.getElementById('preview-slug');
+  const previewSlug = document.getElementById('preview-slug');
 
-  if (slug) {
-    previewEl.textContent = slug;
-    previewEl.className = 'editable';
+  if (!direct) {
+    if (slug) {
+      previewSlug.textContent = slug;
+      previewSlug.className = 'editable';
+    } else {
+      previewSlug.textContent = 'ここにページ識別名が入ります';
+      previewSlug.className = 'placeholder-text';
+    }
+    return;
+  }
+
+  const full = tryBuildDestWithUTM();
+  const el = document.getElementById('preview-direct-full');
+  if (full) {
+    el.textContent = full;
+    el.className = 'editable';
   } else {
-    previewEl.textContent = 'ここにページ識別名が入ります';
-    previewEl.className = 'placeholder-text';
+    el.textContent = '転送先URL と UTM（必須）を入力すると、掲載用URLのプレビューが表示されます';
+    el.className = 'placeholder-text';
   }
 }
 
@@ -470,6 +549,7 @@ function copyJSON() {
 
 // Generate URL
 function generateURL() {
+  const mode = getLinkMode();
   const destination = document.getElementById('destination').value.trim();
   const slug = document.getElementById('slug').value.trim();
   const source = getSourceValue();
@@ -480,7 +560,7 @@ function generateURL() {
   const label = document.getElementById('label').value.trim() || '';
 
   if (!destination) return showToast('⚠️ 転送先URLを入力してください');
-  if (!slug) return showToast('⚠️ ページ識別名を入力してください');
+  if (!slug) return showToast('⚠️ ページ識別名（slug）を入力してください');
   if (!/^[a-zA-Z0-9_-]+$/.test(slug)) return showToast('⚠️ ページ識別名は英数字・ハイフン・アンダースコアのみ');
   if (!source) return showToast('⚠️ utm_source を選択してください');
   if (!medium) return showToast('⚠️ utm_medium を選択してください');
@@ -494,16 +574,27 @@ function generateURL() {
 
   const destWithUTM = destination + (destination.includes('?') ? '&' : '?') + params.toString();
   const fullPath = `${PATH_PREFIX}/${slug}`;
-  const redirectURL = `${BASE_URL}/${fullPath}`;
+  const redirectURL = `${BASE_URL}/${fullPath}/`;
+  const publishURL = mode === 'direct' ? destWithUTM : redirectURL;
 
-  document.getElementById('redirect-url-text').textContent = redirectURL;
-  document.getElementById('dest-url-text').textContent = destWithUTM;
+  const primaryLabel = document.getElementById('result-primary-label');
+  const destBlock = document.getElementById('result-dest-block');
+  if (mode === 'direct') {
+    primaryLabel.textContent = '掲載用URL（UTM付き — このURLを配布・QRにします）';
+    document.getElementById('redirect-url-text').textContent = destWithUTM;
+    destBlock.style.display = 'none';
+  } else {
+    primaryLabel.textContent = 'リダイレクトURL（このURLを配布・QRにします）';
+    document.getElementById('redirect-url-text').textContent = redirectURL;
+    document.getElementById('dest-url-text').textContent = destWithUTM;
+    destBlock.style.display = '';
+  }
 
-  // QR Code
+  // QR Code（配布用URL）
   const qrDiv = document.getElementById('qr-code');
   qrDiv.innerHTML = '';
   new QRCode(qrDiv, {
-    text: redirectURL,
+    text: publishURL,
     width: 200, height: 200,
     colorDark: '#0F2B46', colorLight: '#ffffff',
     correctLevel: QRCode.CorrectLevel.H
@@ -512,13 +603,13 @@ function generateURL() {
   // JSON entry
   const entry = {
     slug: slug,
-    path: fullPath,
     destination: destination,
     tag: tag,
     label: label || `${campaign} 用リンク`,
     utm: { source, medium, campaign }
   };
   if (content) entry.utm.content = content;
+  if (mode === 'direct') entry.mode = 'direct';
 
   _lastJsonEntry = JSON.stringify(entry, null, 2);
   document.getElementById('json-output').innerHTML =
@@ -528,13 +619,22 @@ function generateURL() {
   document.getElementById('result-area').classList.add('show');
 
   saveToHistory({
-    slug, fullPath, redirectURL, destWithUTM,
-    source, medium, campaign, content, tag,
+    mode,
+    slug,
+    fullPath,
+    redirectURL,
+    destWithUTM,
+    publishURL,
+    source,
+    medium,
+    campaign,
+    content,
+    tag,
     label: label || `${campaign} 用リンク`,
     createdAt: new Date().toISOString()
   });
 
-  showToast('✅ URL を生成しました');
+  showToast(mode === 'direct' ? '✅ 掲載用URLを生成しました' : '✅ URL を生成しました');
   setTimeout(() => {
     document.getElementById('result-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, 100);
@@ -545,8 +645,9 @@ function downloadQR() {
   const canvas = document.querySelector('#qr-code canvas');
   if (!canvas) return showToast('⚠️ QR コードがありません');
   const slug = document.getElementById('slug').value.trim() || 'qr';
+  const mode = getLinkMode();
   const link = document.createElement('a');
-  link.download = `qr_${slug}.png`;
+  link.download = mode === 'direct' ? `qr_direct_${slug}.png` : `qr_${slug}.png`;
   link.href = canvas.toDataURL('image/png');
   link.click();
   showToast('QR コードをダウンロードしました');
@@ -590,14 +691,19 @@ function renderHistory() {
     const date = new Date(h.createdAt);
     const dateStr = `${date.getFullYear()}/${String(date.getMonth()+1).padStart(2,'0')}/${String(date.getDate()).padStart(2,'0')} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
     const mColor = mediumColors[h.medium] || '#6b7280';
+    const hm = h.mode === 'direct' ? 'direct' : 'redirect';
+    const modeLabel = hm === 'direct'
+      ? '<span class="tag-badge" style="background:#fef3c7;color:#92400e">直接</span>'
+      : '<span class="tag-badge" style="background:#e0f2fe;color:#0369a1">短縮</span>';
+    const pub = h.publishURL || h.redirectURL;
     return `<tr>
       <td class="date-cell">${dateStr}</td>
-      <td><strong>${h.slug}</strong><br><span style="font-size:11px;color:var(--mid-gray)">${h.label}</span></td>
+      <td>${modeLabel}<br><strong>${h.slug}</strong><br><span style="font-size:11px;color:var(--mid-gray)">${h.label}</span></td>
       <td>${h.source}</td>
       <td><span class="tag-badge" style="background:${mColor}15;color:${mColor}">${h.medium}</span></td>
       <td style="font-size:12px">${h.campaign}</td>
       <td style="font-size:12px;color:var(--mid-gray)">${h.content || '-'}</td>
-      <td class="url-cell">${h.redirectURL}</td>
+      <td class="url-cell">${pub}</td>
       <td><button class="btn btn-secondary btn-small" onclick="copyHistoryURL(${i})">コピー</button></td>
     </tr>`;
   }).join('');
@@ -606,7 +712,7 @@ function renderHistory() {
     <div class="table-wrapper">
       <table class="history-table">
         <thead>
-          <tr><th>日時</th><th>識別名 / ラベル</th><th>source</th><th>medium</th><th>campaign</th><th>content</th><th>リダイレクトURL</th><th></th></tr>
+          <tr><th>日時</th><th>モード / 識別名</th><th>source</th><th>medium</th><th>campaign</th><th>content</th><th>配布用URL</th><th></th></tr>
         </thead>
         <tbody>${rows}</tbody>
       </table>
@@ -619,7 +725,8 @@ function renderHistory() {
 function copyHistoryURL(index) {
   const history = getHistory();
   if (history[index]) {
-    navigator.clipboard.writeText(history[index].redirectURL).then(() => showToast('URL をコピーしました'));
+    const url = history[index].publishURL || history[index].redirectURL;
+    navigator.clipboard.writeText(url).then(() => showToast('URL をコピーしました'));
   }
 }
 
@@ -635,9 +742,19 @@ function exportCSV() {
   const history = getHistory();
   if (history.length === 0) return showToast('エクスポートする履歴がありません');
 
-  const headers = ['日時','識別名','ラベル','utm_source','utm_medium','utm_campaign','utm_content','タグ','リダイレクトURL','転送先URL'];
+  const headers = ['日時','掲載モード','識別名','ラベル','utm_source','utm_medium','utm_campaign','utm_content','タグ','配布用URL','転送先URL(UTM付き)'];
   const rows = history.map(h => [
-    h.createdAt, h.slug, h.label, h.source, h.medium, h.campaign, h.content || '', h.tag, h.redirectURL, h.destWithUTM
+    h.createdAt,
+    h.mode === 'direct' ? 'direct' : 'redirect',
+    h.slug,
+    h.label,
+    h.source,
+    h.medium,
+    h.campaign,
+    h.content || '',
+    h.tag,
+    h.publishURL || h.redirectURL,
+    h.destWithUTM
   ]);
 
   const bom = '\uFEFF';
@@ -652,6 +769,7 @@ function exportCSV() {
 }
 
 function resetForm() {
+  document.querySelector('input[name="link_mode"][value="redirect"]').checked = true;
   document.getElementById('destination').value = 'https://www.saison-technology.com/';
   document.getElementById('slug').value = '';
   document.getElementById('utm_source').value = '';
@@ -663,7 +781,8 @@ function resetForm() {
   document.getElementById('tag').value = 'x-campaign';
   document.getElementById('label').value = '';
   document.getElementById('result-area').classList.remove('show');
-  updatePreview();
+  document.getElementById('result-dest-block').style.display = '';
+  handleModeChange();
 }
 </script>
 

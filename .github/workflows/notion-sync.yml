@@ -21,4 +21,10 @@ jobs:
         env:
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
           NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+          # 任意（既定で script 内に同じ名前が入る）:
+          # NOTION_ISSUED_DATE_PROP: 発行日
+          # NOTION_REGISTERED_AT_PROP: 登録日時   # 使わない場合は NOTION_REGISTERED_AT_PROP: ""
+          # NOTION_ISSUER_PROP: 発行者
+          # NOTION_ISSUER_TYPE: rich_text   # または select
+          # NOTION_ISSUER_SELECT_NAME: GitHub自動同期   # select のとき DB にある選択肢名
         run: python scripts/notion_sync.py
