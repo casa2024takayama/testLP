@@ -1,0 +1,6 @@
+# build.js 生成物（CI で再生成）
+public/
+
+# Python
+scripts/__pycache__/
+*.pyc

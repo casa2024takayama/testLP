@@ -4,12 +4,15 @@ redirects.json の内容を Notion UTMリンク管理DBに同期するスクリ�
 - QRに設定するURL をキーに重複チェック
 - 未登録のエントリのみ新規登録（既存レコードは上書きしない）
 - 実行ログを標準出力に出力
+- Notion API の一時障害（504 等）に対してリトライする
 """
 
 import json
 import os
+import random
+import time
+
 import requests
-from urllib.parse import urlencode, urlparse, parse_qs
 
 NOTION_API_KEY = os.environ["NOTION_API_KEY"]
 DATABASE_ID = os.environ["NOTION_DATABASE_ID"]
@@ -19,6 +22,61 @@ HEADERS = {
     "Content-Type": "application/json",
     "Notion-Version": "2022-06-28",
 }
+
+# (connect秒, read秒) — DB query が重いと Notion 側が遅延することがある
+NOTION_TIMEOUT = (30, 120)
+RETRYABLE_STATUS = frozenset({429, 500, 502, 503, 504})
+MAX_HTTP_ATTEMPTS = 6
+BASE_DELAY_SEC = 3.0
+
+
+def notion_post(url, json_body, session=None):
+    """Notion API への POST。429 / 5xx / タイムアウト時は指数バックオフで再試行する。"""
+    sess = session if session is not None else requests
+    last_response = None
+
+    for attempt in range(1, MAX_HTTP_ATTEMPTS + 1):
+        try:
+            res = sess.post(url, headers=HEADERS, json=json_body, timeout=NOTION_TIMEOUT)
+            last_response = res
+
+            if res.status_code in RETRYABLE_STATUS:
+                if attempt >= MAX_HTTP_ATTEMPTS:
+                    res.raise_for_status()
+                delay = BASE_DELAY_SEC * (2 ** (attempt - 1)) + random.uniform(0, 2)
+                if res.status_code == 429:
+                    ra = res.headers.get("Retry-After")
+                    if ra:
+                        try:
+                            delay = float(ra)
+                        except ValueError:
+                            pass
+                print(
+                    f"  [RETRY] HTTP {res.status_code} … {delay:.1f}s 待機 ({attempt}/{MAX_HTTP_ATTEMPTS})"
+                )
+                time.sleep(delay)
+                continue
+
+            res.raise_for_status()
+            return res
+
+        except requests.Timeout:
+            if attempt >= MAX_HTTP_ATTEMPTS:
+                raise
+            delay = BASE_DELAY_SEC * (2 ** (attempt - 1)) + random.uniform(0, 2)
+            print(f"  [RETRY] タイムアウト, {delay:.1f}s 待機 ({attempt}/{MAX_HTTP_ATTEMPTS})")
+            time.sleep(delay)
+
+        except requests.ConnectionError:
+            if attempt >= MAX_HTTP_ATTEMPTS:
+                raise
+            delay = BASE_DELAY_SEC * (2 ** (attempt - 1)) + random.uniform(0, 2)
+            print(f"  [RETRY] 接続エラー, {delay:.1f}s 待機 ({attempt}/{MAX_HTTP_ATTEMPTS})")
+            time.sleep(delay)
+
+    if last_response is not None:
+        last_response.raise_for_status()
+    raise RuntimeError("notion_post: unexpected failure without response")
 
 
 def load_redirects():
@@ -47,15 +105,14 @@ def build_qr_url(entry):
     return url
 
 
-def fetch_existing_urls():
+def fetch_existing_urls(session=None):
     """Notion DBに登録済みのQR URLセットを取得（重複チェック用）"""
     existing = set()
     url = f"https://api.notion.com/v1/databases/{DATABASE_ID}/query"
     payload = {"page_size": 100}
 
     while True:
-        res = requests.post(url, headers=HEADERS, json=payload)
-        res.raise_for_status()
+        res = notion_post(url, payload, session=session)
         data = res.json()
 
         for page in data.get("results", []):
@@ -72,7 +129,7 @@ def fetch_existing_urls():
     return existing
 
 
-def register_entry(entry, qr_url):
+def register_entry(entry, qr_url, session=None):
     """エントリをNotionに新規登録"""
     utm = entry.get("utm", {})
     label = entry.get("label", entry.get("slug", ""))
@@ -98,12 +155,11 @@ def register_entry(entry, qr_url):
         "properties": properties,
     }
 
-    res = requests.post(
+    res = notion_post(
         "https://api.notion.com/v1/pages",
-        headers=HEADERS,
-        json=payload,
+        payload,
+        session=session,
     )
-    res.raise_for_status()
     return res.json().get("url")
 
 
@@ -113,30 +169,31 @@ def main():
     redirects = load_redirects()
     print(f"redirects.json: {len(redirects)} 件")
 
-    existing_urls = fetch_existing_urls()
-    print(f"Notion登録済み: {len(existing_urls)} 件")
+    with requests.Session() as session:
+        existing_urls = fetch_existing_urls(session=session)
+        print(f"Notion登録済み: {len(existing_urls)} 件")
 
-    new_count = 0
-    skip_count = 0
+        new_count = 0
+        skip_count = 0
 
-    for entry in redirects:
-        qr_url = build_qr_url(entry)
-        if not qr_url:
-            print(f"  [SKIP] URLを生成できません: {entry.get('slug', '?')}")
-            skip_count += 1
-            continue
+        for entry in redirects:
+            qr_url = build_qr_url(entry)
+            if not qr_url:
+                print(f"  [SKIP] URLを生成できません: {entry.get('slug', '?')}")
+                skip_count += 1
+                continue
 
-        if qr_url in existing_urls:
-            print(f"  [SKIP] 登録済み: {entry.get('slug', '?')}")
-            skip_count += 1
-            continue
+            if qr_url in existing_urls:
+                print(f"  [SKIP] 登録済み: {entry.get('slug', '?')}")
+                skip_count += 1
+                continue
 
-        try:
-            notion_url = register_entry(entry, qr_url)
-            print(f"  [OK] 登録完了: {entry.get('slug', '?')} → {notion_url}")
-            new_count += 1
-        except Exception as e:
-            print(f"  [ERROR] 登録失敗: {entry.get('slug', '?')} / {e}")
+            try:
+                notion_url = register_entry(entry, qr_url, session=session)
+                print(f"  [OK] 登録完了: {entry.get('slug', '?')} → {notion_url}")
+                new_count += 1
+            except Exception as e:
+                print(f"  [ERROR] 登録失敗: {entry.get('slug', '?')} / {e}")
 
     print(f"\n=== 完了 / 新規:{new_count}件 スキップ:{skip_count}件 ===")
 

@@ -1,13 +1,56 @@
 const fs = require("fs");
 const path = require("path");
+const { execSync } = require("child_process");
 
-const config = JSON.parse(fs.readFileSync("config.json", "utf-8"));
-const data = JSON.parse(fs.readFileSync("redirects.json", "utf-8"));
-const outputDir = "public";
+/** スクリプト置き場所＝リポジトリルート（cwd に依存しない） */
+const REPO_ROOT = __dirname;
+const outputDir = path.join(REPO_ROOT, "public");
 const PATH_PREFIX = "dev";
+
+const config = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, "config.json"), "utf-8"));
+const data = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, "redirects.json"), "utf-8"));
+
+function loadReleaseVersion() {
+  const versionPath = path.join(REPO_ROOT, "version.json");
+  try {
+    const raw = fs.readFileSync(versionPath, "utf-8");
+    const v = JSON.parse(raw);
+    if (v.version && typeof v.version === "string") return v.version.trim();
+  } catch (_) {}
+  console.warn("⚠️  version.json が無いか無効です。0.0.0 を使います。");
+  return "0.0.0";
+}
+
+function resolveGitSha() {
+  const gh = process.env.GITHUB_SHA;
+  if (gh && gh.length >= 7) return gh.slice(0, 7);
+  const custom = process.env.BUILD_SHA;
+  if (custom && custom.length >= 7) return custom.slice(0, 7);
+  try {
+    return execSync("git rev-parse --short HEAD", { encoding: "utf-8", cwd: REPO_ROOT }).trim();
+  } catch (_) {
+    return "";
+  }
+}
+
+function buildReleaseMeta() {
+  const version = loadReleaseVersion();
+  const gitSha = resolveGitSha();
+  const builtAt = new Date().toISOString();
+  return { version, gitSha, builtAt };
+}
+
+const releaseMeta = buildReleaseMeta();
 
 if (!fs.existsSync(outputDir)) {
   fs.mkdirSync(outputDir, { recursive: true });
+}
+
+/** 静的 HTML にもリダイレクトページと同形式のビルドスタンプを付与（再ビルドで古いコメントは置換） */
+function withBuildStampComment(html, meta) {
+  const stamp = `link-tracker v${meta.version}${meta.gitSha ? ` ${meta.gitSha}` : ""} ${meta.builtAt}`;
+  const stripped = html.replace(/^<!--\s*link-tracker v[\s\S]*?-->\s*\n?/, "");
+  return `<!-- ${stamp} -->\n${stripped}`;
 }
 
 function buildDestination(entry) {
@@ -25,10 +68,11 @@ function buildDestination(entry) {
   return url;
 }
 
-function generateHTML(entry) {
+function generateHTML(entry, meta) {
   const dest = buildDestination(entry);
   const safeLabel = entry.label.replace(/'/g, "\\'");
   const safeDest = dest.replace(/'/g, "\\'");
+  const buildStamp = `link-tracker v${meta.version}${meta.gitSha ? ` ${meta.gitSha}` : ""} ${meta.builtAt}`;
 
   const utmParams = entry.utm ? `,
     utm_source: '${entry.utm.source || ""}',
@@ -36,7 +80,8 @@ function generateHTML(entry) {
     utm_campaign: '${entry.utm.campaign || ""}',
     utm_content: '${entry.utm.content || ""}'` : "";
 
-  return `<!DOCTYPE html>
+  return `<!-- ${buildStamp} -->
+<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
@@ -122,17 +167,51 @@ function generateHTML(entry) {
 </html>`;
 }
 
-function generateIndex() {
-  const rows = data.redirects.map((e) => {
+function getMode(entry) {
+  return entry.mode === "direct" ? "direct" : "redirect";
+}
+
+function generateIndex(meta) {
+  const redirectEntries = data.redirects.filter((e) => getMode(e) === "redirect");
+  const directEntries = data.redirects.filter((e) => getMode(e) === "direct");
+
+  const redirectRows = redirectEntries.map((e) => {
     const p = `${PATH_PREFIX}/${e.slug}`;
     const dest = buildDestination(e);
+    const shortUrl = `${config.base_url}/${p}/`;
     return `<tr>
-      <td><a href="${config.base_url}/${p}/">${p}</a></td>
+      <td><a href="${shortUrl}">${p}</a> <button class="copy" data-copy="${shortUrl}">コピー</button></td>
       <td>${e.tag}</td>
       <td>${e.label}</td>
       <td><a href="${dest}" target="_blank">${dest}</a></td>
     </tr>`;
   }).join("\n");
+
+  const directRows = directEntries.map((e) => {
+    const dest = buildDestination(e);
+    return `<tr>
+      <td>${e.slug}</td>
+      <td>${e.tag}</td>
+      <td>${e.label}</td>
+      <td><a href="${dest}" target="_blank">${dest}</a> <button class="copy" data-copy="${dest}">コピー</button></td>
+    </tr>`;
+  }).join("\n");
+
+  const redirectSection = redirectEntries.length ? `
+  <h2>リダイレクト経由（短縮URL + GA4計測）</h2>
+  <p class="note">外部に出すのは <code>パス</code> 欄の短縮URL。クリック時に <code>link_click_redirect</code> を送信し、その後 <code>転送先</code> へ遷移します。</p>
+  <table>
+    <thead><tr><th>パス（共有用）</th><th>タグ</th><th>ラベル</th><th>転送先（UTM付き）</th></tr></thead>
+    <tbody>${redirectRows}</tbody>
+  </table>` : "";
+
+  const directSection = directEntries.length ? `
+  <h2>直接掲載（UTMのみ・転送なし）</h2>
+  <p class="note">外部ページ → <strong>自社サイト直リンク</strong>用。リダイレクトHTMLは生成されません。掲載先には <code>転送先（UTM付き）</code> をそのまま貼り付けます（自社サイト側 GA4 で計測）。</p>
+  <table>
+    <thead><tr><th>識別子（slug）</th><th>タグ</th><th>ラベル</th><th>掲載用URL（UTM付き）</th></tr></thead>
+    <tbody>${directRows}</tbody>
+  </table>` : "";
 
   return `<!DOCTYPE html>
 <html lang="ja">
@@ -141,55 +220,118 @@ function generateIndex() {
   <meta name="robots" content="noindex, nofollow">
   <title>Link Tracker - Admin</title>
   <style>
-    body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; max-width:960px; margin:40px auto; padding:0 20px; color:#1a2332; }
-    h1 { color:#065A82; border-bottom:2px solid #028090; padding-bottom:8px; }
-    table { width:100%; border-collapse:collapse; margin-top:20px; }
+    body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; max-width:1040px; margin:40px auto; padding:0 20px; color:#1a2332; }
+    .page-head { display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:12px 16px; border-bottom:2px solid #028090; padding-bottom:8px; margin-bottom:0; }
+    .page-head h1 { margin:0; color:#065A82; font-size:1.75em; line-height:1.2; }
+    .release-near-title { margin:0; font-size:14px; color:#666; font-family:ui-monospace,monospace; }
+    .release-near-title strong { color:#028090; }
+    .release-near-title code { font-size:13px; background:#f0f4f7; padding:2px 6px; border-radius:4px; }
+    h2 { color:#065A82; margin-top:32px; font-size:18px; }
+    table { width:100%; border-collapse:collapse; margin-top:12px; font-size:13px; }
     th { background:#065A82; color:white; padding:10px 12px; text-align:left; }
-    td { padding:8px 12px; border-bottom:1px solid #e0e0e0; word-break:break-all; }
+    td { padding:8px 12px; border-bottom:1px solid #e0e0e0; word-break:break-all; vertical-align:top; }
     tr:hover { background:#f4f7fa; }
     a { color:#028090; }
     .info { background:#f4f7fa; padding:12px 16px; border-radius:6px; margin-top:16px; font-size:14px; color:#666; }
+    .note { font-size:13px; color:#666; margin-top:4px; }
     .tool-link { margin-top:16px; }
     .tool-link a { background:#028090; color:white; padding:8px 16px; border-radius:6px; text-decoration:none; font-size:14px; }
     .tool-link a:hover { background:#065A82; }
+    button.copy { font-size:11px; background:#e8eef2; border:1px solid #cdd6df; border-radius:4px; padding:2px 8px; cursor:pointer; margin-left:6px; }
+    button.copy:hover { background:#d5dee6; }
+    button.copy.done { background:#02C39A; color:white; border-color:#02C39A; }
+    footer.build-meta { margin-top:48px; padding-top:16px; border-top:1px solid #e0e0e0; font-size:12px; color:#888; font-family:ui-monospace,monospace; }
   </style>
 </head>
 <body>
-  <h1>Link Tracker - 管理用一覧</h1>
+  <div class="page-head">
+    <h1>Link Tracker - 管理用一覧</h1>
+    <p class="release-near-title">リリース <strong>v${meta.version}</strong>${meta.gitSha ? ` · <code>${meta.gitSha}</code>` : ""}</p>
+  </div>
   <div class="info">
-    登録リンク数: ${data.redirects.length}件 ｜ GTM: <code>${config.gtm_container_id}</code> ｜ GA4: <code>${config.ga4_measurement_id}</code>
+    登録リンク数: ${data.redirects.length}件（リダイレクト ${redirectEntries.length} ／ 直接 ${directEntries.length}）
+    ｜ GTM: <code>${config.gtm_container_id}</code> ｜ GA4: <code>${config.ga4_measurement_id}</code>
   </div>
   <div class="tool-link">
-    <a href="${config.base_url}/utm-generator.html">📝 UTM Link Generator を開く</a>
-    <a href="${config.base_url}/manual.html" style="margin-left:8px;">📖 操作マニュアル</a>
-    <a href="${config.base_url}/usecase-guide.html" style="margin-left:8px;">💡 ユースケースガイド</a>
+    <a href="${config.base_url}/utm-generator.html">UTM Link Generator を開く</a>
+    <a href="${config.base_url}/manual.html" style="margin-left:8px;">操作マニュアル</a>
+    <a href="${config.base_url}/usecase-guide.html" style="margin-left:8px;">ユースケースガイド</a>
   </div>
-  <table>
-    <thead><tr><th>パス</th><th>タグ</th><th>ラベル</th><th>転送先（UTM付き）</th></tr></thead>
-    <tbody>${rows}</tbody>
-  </table>
+  ${redirectSection}
+  ${directSection}
+  <script>
+    document.addEventListener('click', (ev) => {
+      const btn = ev.target.closest('button.copy');
+      if (!btn) return;
+      const text = btn.getAttribute('data-copy');
+      navigator.clipboard.writeText(text).then(() => {
+        btn.classList.add('done');
+        const original = btn.textContent;
+        btn.textContent = 'コピー済';
+        setTimeout(() => { btn.classList.remove('done'); btn.textContent = original; }, 1200);
+      });
+    });
+  </script>
+  <footer class="build-meta">
+    リリース <strong>v${meta.version}</strong>
+    ${meta.gitSha ? ` · commit <code>${meta.gitSha}</code>` : ""}
+    · ビルド時刻 ${meta.builtAt}
+    · <a href="${config.base_url}/version.json"><code>version.json</code></a>（生成物）
+  </footer>
 </body>
 </html>`;
 }
 
-// Build redirect pages
+// Build redirect pages (skip direct-mode entries)
 let count = 0;
+let directCount = 0;
+let skippedDirect = 0;
 for (const entry of data.redirects) {
+  if (getMode(entry) === "direct") {
+    if (!entry.utm) {
+      console.warn(`⚠️  direct モードだが utm が未設定のためスキップ: ${entry.slug}`);
+      skippedDirect++;
+      continue;
+    }
+    directCount++;
+    continue;
+  }
   const pagePath = `${PATH_PREFIX}/${entry.slug}`;
   const dir = path.join(outputDir, pagePath);
   fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, "index.html"), generateHTML(entry));
+  fs.writeFileSync(path.join(dir, "index.html"), generateHTML(entry, releaseMeta));
   count++;
 }
 
 // Copy static files
 const staticFiles = ["utm-generator.html", "manual.html", "usecase-guide.html"];
 for (const file of staticFiles) {
-  if (fs.existsSync(file)) {
-    fs.copyFileSync(file, path.join(outputDir, file));
+  const src = path.join(REPO_ROOT, file);
+  if (fs.existsSync(src)) {
+    const raw = fs.readFileSync(src, "utf-8");
+    fs.writeFileSync(path.join(outputDir, file), withBuildStampComment(raw, releaseMeta));
     console.log(`✅ Copied ${file}`);
   }
 }
 
-fs.writeFileSync(path.join(outputDir, "index.html"), generateIndex());
-console.log(`✅ Built ${count} redirect pages + admin index → ${outputDir}/`);
+fs.writeFileSync(
+  path.join(outputDir, "version.json"),
+  JSON.stringify(
+    {
+      version: releaseMeta.version,
+      git_sha: releaseMeta.gitSha || null,
+      built_at: releaseMeta.builtAt,
+    },
+    null,
+    2
+  ) + "\n"
+);
+
+fs.writeFileSync(path.join(outputDir, "index.html"), generateIndex(releaseMeta));
+console.log(
+  `📌 Release v${releaseMeta.version}${releaseMeta.gitSha ? ` (${releaseMeta.gitSha})` : ""} · ${releaseMeta.builtAt}`
+);
+console.log(`✅ Built ${count} redirect pages, ${directCount} direct links (admin index) → ${outputDir}/`);
+if (skippedDirect) {
+  console.log(`   (direct モードで utm 未設定のため除外: ${skippedDirect} 件)`);
+}

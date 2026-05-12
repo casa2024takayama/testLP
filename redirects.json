@@ -29,6 +29,32 @@
       "destination": "https://www.saison-technology.com/",
       "tag": "x-campaign",
       "label": "X施策テスト用"
+    },
+    {
+      "slug": "itwomensummit-contact",
+      "mode": "direct",
+      "destination": "https://www.saison-technology.com/contact/",
+      "tag": "event-sponsor",
+      "label": "IT Women Summit 2026 スポンサー掲載 - お問い合わせ",
+      "utm": {
+        "source": "shoeisha",
+        "medium": "referral",
+        "campaign": "FY26_event_202605_itwomensummit",
+        "content": "sponsor_contact"
+      }
+    },
+    {
+      "slug": "itwomensummit-recruit",
+      "mode": "direct",
+      "destination": "https://www.saison-technology.com/SIS/saiyo/recruit",
+      "tag": "event-sponsor",
+      "label": "IT Women Summit 2026 スポンサー掲載 - 採用",
+      "utm": {
+        "source": "shoeisha",
+        "medium": "referral",
+        "campaign": "FY26_event_202605_itwomensummit",
+        "content": "sponsor_recruit"
+      }
     }
   ]
 }

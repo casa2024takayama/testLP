@@ -1,0 +1,36 @@
+# PR でサイトに影響する変更があるときは version.json を上げることを強制します。
+name: Require version bump
+
+on:
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check version.json updated when needed
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          NAMES=$(git diff --name-only "$BASE_SHA"..."$HEAD_SHA")
+          NEED=false
+          echo "$NAMES" | grep -q '^redirects\.json$' && NEED=true || true
+          echo "$NAMES" | grep -q '^build\.js$' && NEED=true || true
+          echo "$NAMES" | grep -q '^config\.json$' && NEED=true || true
+          if ! $NEED; then
+            echo "No tracked files changed (redirects/build/config). Skip."
+            exit 0
+          fi
+          if echo "$NAMES" | grep -q '^version\.json$'; then
+            echo "version.json updated — OK"
+            exit 0
+          fi
+          echo "::error::redirects.json / build.js / config.json が変更されています。デプロイ後に更新が分かるよう、この PR で version.json の version を上げてください。"
+          exit 1
